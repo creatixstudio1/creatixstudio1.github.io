@@ -54,7 +54,7 @@ onAuthStateChanged(auth, user => {
   renderCommentAuthUI();
 });
 
-/* ---- Load comments (real-time listener, runs once) ---- */
+/* ---- Load comments (real-time, runs once after DOM ready) ---- */
 let __commentsListenerActive = false;
 function loadComments(){
   if(__commentsListenerActive) return;
@@ -65,18 +65,12 @@ function loadComments(){
     snap.forEach(child => all.push({ id: child.key, ...child.val() }));
     renderComments(all.reverse());
   }, err => {
-    console.error('Comments load error:', err.code, err.message);
     const el = document.getElementById('commentsList');
-    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات، تأكد من إعدادات Firebase Rules.</p></div>';
+    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات.</p></div>';
   });
 }
 
-// Wait for DOM then start listener
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', loadComments);
-} else {
-  loadComments();
-}
+document.addEventListener('DOMContentLoaded', loadComments);
 
 window.__loadComments = loadComments;
 window.__deleteComment = function(id){
