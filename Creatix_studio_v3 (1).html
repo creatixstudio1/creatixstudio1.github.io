@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creatix Studio | استوديو إبداعي للتصميم والتطوير</title>
+<meta name="description" content="استوديو Creatix — فريق متكامل للجرافيك ديزاين، تطوير المواقع، ومونتاج الفيديو. هوية بصرية بتفرق فعلاً.">
+<meta property="og:title" content="Creatix Studio | استوديو إبداعي للتصميم والتطوير">
+<meta property="og:description" content="فريق Creatix Studio — جرافيك، ويب، فيديو. هوية بصرية متكاملة لبراندك.">
+<meta property="og:type" content="website">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235A189A'/%3E%3Crect x='6' y='6' width='52' height='52' rx='11' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%239D4EDD'/%3E%3Cstop offset='1' stop-color='%23C77DFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='32' y='44' font-family='Arial Black,sans-serif' font-size='32' font-weight='900' text-anchor='middle' fill='%2310002B'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+/* ============================================================
+   FIREBASE CONFIG — استبدل القيم دي ببياناتك من Firebase Console
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
+         updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, push, onValue, remove, serverTimestamp, query, orderByChild }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB5hERsS67SequO1E3I2rh30mVNpUvUfMs",
+  authDomain:        "creatix-studio-cdb92.firebaseapp.com",
+  databaseURL:       "https://creatix-studio-cdb92-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "creatix-studio-cdb92",
+  storageBucket:     "creatix-studio-cdb92.firebasestorage.app",
+  messagingSenderId: "1021965301316",
+  appId:             "1:1021965301316:web:ad139ef0f0352835f3ae11",
+  measurementId:     "G-8013034X8Q"
+};
+
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getDatabase(app);
+const gProvider = new GoogleAuthProvider();
+
+/* ---- expose to global scope ---- */
+window.__FB = { auth, db, ref, push, onValue, remove, serverTimestamp, query,
+                orderByChild, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+                signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider,
+                gProvider, updateProfile };
+
+/* ---- Auth state listener ---- */
+onAuthStateChanged(auth, user => {
+  window.__currentUser = user || null;
+  renderCommentAuthUI();
+  if(user) loadComments();
+});
+
+/* ---- Load & render comments (real-time) ---- */
+function loadComments(){
+  const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
+  onValue(commentsRef, snap => {
+    const all = [];
+    snap.forEach(child => all.push({ id: child.key, ...child.val() }));
+    renderComments(all.reverse());
+  });
+}
+
+window.__loadComments = loadComments;
+window.__deleteComment = function(id){
+  remove(ref(db,'comments/'+id))
+    .then(()=> showToast('🗑️ تم حذف التعليق'))
+    .catch(()=> showToast('⚠️ مشكلة في الحذف'));
+};
+
+window.__submitComment = async function(){
+  const user = window.__currentUser;
+  if(!user){ showToast('⚠️ سجّل دخولك الأول'); return; }
+  const textarea = document.getElementById('commentText');
+  const text = (textarea.value || '').trim();
+  if(!text){ showToast('⚠️ اكتب تعليقك الأول'); return; }
+  if(text.length > 500){ showToast('⚠️ التعليق طويل جداً (أقصى 500 حرف)'); return; }
+
+  const submitBtn = document.getElementById('commentSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'جاري الإرسال...';
+
+  try{
+    await push(ref(db,'comments'), {
+      text,
+      uid:      user.uid,
+      name:     user.displayName || 'مستخدم',
+      avatar:   user.photoURL    || '',
+      ts:       serverTimestamp()
+    });
+    textarea.value = '';
+    updateCharCount();
+    showToast('✅ تم نشر تعليقك!');
+  }catch(e){
+    showToast('⚠️ حصل خطأ، حاول تاني');
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'نشر التعليق 💬';
+  }
+};
+
+/* ---- Admin: load comments to dashboard ---- */
+window.__loadAdminComments = function(){
+  const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
+  onValue(commentsRef, snap => {
+    const all = [];
+    snap.forEach(child => all.push({ id: child.key, ...child.val() }));
+    renderAdminComments(all.reverse());
+  });
+};
+
+</script>
+
+<style>
+/* ============================================
+   CREATIX STUDIO — DESIGN TOKENS
+   Color: deep violet → electric purple gradient system
+   ============================================ */
+:root{
+  --ink-0:#10002B;     /* deepest background */
+  --ink-1:#240046;     /* panel background */
+  --violet-1:#3C096C;  /* mid surface */
+  --violet-2:#5A189A;  /* primary brand */
+  --violet-3:#7B2CBF;  /* interactive */
+  --violet-4:#9D4EDD;  /* accent bright */
+  --lilac-1:#C77DFF;   /* highlight */
+  --lilac-2:#E0AAFF;   /* glow text */
+
+  --text-hi:#F5EEFF;
+  --text-mid:#C9B8E8;
+  --text-low:#8C7AAE;
+
+  --line:rgba(199,125,255,0.16);
+  --line-hi:rgba(224,170,255,0.35);
+
+  --display: 'Cairo', sans-serif;
+  --body: 'IBM Plex Sans Arabic', sans-serif;
+
+  --radius: 18px;
+  --ease: cubic-bezier(.22,.9,.32,1);
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--ink-0);
+  color:var(--text-hi);
+  font-family:var(--body);
+  line-height:1.7;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+}
+::selection{background:var(--violet-4); color:#fff;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+input,textarea{font-family:inherit;}
+:focus-visible{outline:2px solid var(--lilac-1); outline-offset:3px; border-radius:4px;}
+
+.wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+@media(max-width:640px){.wrap{padding:0 20px;}}
+
+/* ---------- Ambient background aurora ---------- */
+.aurora{
+  position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  background:var(--ink-0);
+}
+.aurora::before, .aurora::after{
+  content:''; position:absolute; border-radius:50%; filter:blur(110px); opacity:0.55;
+}
+.aurora::before{
+  width:60vw; height:60vw; top:-20vw; right:-15vw;
+  background:radial-gradient(circle, var(--violet-3), transparent 70%);
+  animation:drift1 22s ease-in-out infinite;
+}
+.aurora::after{
+  width:50vw; height:50vw; bottom:-15vw; left:-10vw;
+  background:radial-gradient(circle, var(--violet-2), transparent 70%);
+  animation:drift2 26s ease-in-out infinite;
+}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-6vw,8vw) scale(1.12);}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(8vw,-6vw) scale(1.08);}}
+
+.grain{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.035; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+main, header, footer{position:relative; z-index:2;}
+
+/* ---------- Header / Nav ---------- */
+header{
+  position:sticky; top:0; z-index:40;
+  backdrop-filter:blur(16px);
+  background:rgba(16,0,43,0.72);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex; align-items:center; justify-content:center; padding:18px 0;}
+.logo{
+  font-family:var(--display); font-weight:900; font-size:1.5rem; letter-spacing:0.5px;
+  display:flex; align-items:center; gap:10px;
+}
+.logo-mark{
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg, var(--violet-4), var(--lilac-1));
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; color:var(--ink-0); font-weight:900;
+  box-shadow:0 0 22px rgba(157,78,221,0.55);
+}
+.logo-img{
+  height:56px; width:auto; display:block; max-width:90%;
+  filter:drop-shadow(0 0 10px rgba(157,78,221,0.45));
+}
+
+/* ---------- Fixed corner buttons ---------- */
+.corner-btn{
+  position:fixed; top:22px; z-index:110;
+  width:52px; height:52px; border-radius:50%; border:1px solid var(--line-hi);
+  background:rgba(36,0,70,0.85); backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 24px rgba(0,0,0,0.35);
+  transition:transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease);
+}
+.corner-btn:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 10px 30px rgba(157,78,221,0.4);}
+
+/* menu button: top-right (RTL start) */
+.menu-btn{ right:24px; }
+.menu-bars{display:flex; flex-direction:column; gap:5px; width:20px;}
+.menu-bars span{display:block; width:100%; height:2px; background:var(--text-hi); border-radius:2px; transition:all .3s var(--ease);}
+.menu-btn[aria-expanded="true"] .menu-bars span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.menu-btn[aria-expanded="true"] .menu-bars span:nth-child(2){opacity:0;}
+.menu-btn[aria-expanded="true"] .menu-bars span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+/* add-designs button: top-left (RTL end) */
+.add-btn{
+  left:24px;
+  background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
+  border:none;
+}
+.add-btn .add-plus{font-size:1.6rem; font-weight:400; color:var(--ink-0); line-height:1; margin-top:-2px;}
+.add-btn.hidden{display:none !important;}
+.add-btn:hover{box-shadow:0 10px 30px rgba(199,125,255,0.55);}
+
+/* admin panel button: top-center */
+.center-btn{
+  left:50%; transform:translateX(-50%);
+  background:radial-gradient(circle at 35% 30%, var(--violet-2), var(--ink-1) 75%);
+  border:1px solid var(--line-hi);
+}
+.center-btn:hover{transform:translateX(-50%) translateY(-2px) scale(1.04);}
+.center-icon{font-size:1.3rem; line-height:1; filter:drop-shadow(0 0 6px rgba(199,125,255,0.5));}
+
+@media(max-width:640px){
+  .corner-btn{width:46px; height:46px; top:16px;}
+  .menu-btn{right:16px;}
+  .add-btn{left:16px;}
+  .center-btn{left:50%;}
+}
+
+/* ---------- Dropdown menu panel ---------- */
+.menu-backdrop{
+  position:fixed; inset:0; z-index:90; background:rgba(16,0,43,0.6); backdrop-filter:blur(4px);
+  opacity:0; pointer-events:none; transition:opacity .3s var(--ease);
+}
+.menu-backdrop.show{opacity:1; pointer-events:auto;}
+
+.menu-panel{
+  position:fixed; top:88px; right:24px; z-index:100; width:260px;
+  background:var(--ink-1); border:1px solid var(--line-hi); border-radius:20px;
+  padding:14px; box-shadow:0 24px 60px rgba(0,0,0,0.5);
+  opacity:0; transform:translateY(-12px) scale(0.97); pointer-events:none;
+  transition:opacity .28s var(--ease), transform .28s var(--ease);
+}
+.menu-panel.show{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+.menu-panel-links{display:flex; flex-direction:column; gap:4px;}
+.menu-panel-links a{
+  font-size:0.96rem; color:var(--text-mid); font-weight:500; padding:12px 16px; border-radius:12px;
+  transition:all .2s var(--ease);
+}
+.menu-panel-links a:hover{background:rgba(157,78,221,0.12); color:var(--text-hi);}
+.menu-panel-links a.nav-cta{
+  background:linear-gradient(135deg, var(--violet-3), var(--violet-4));
+  color:#fff; text-align:center; font-weight:700; margin-top:8px; padding:13px 16px;
+}
+.menu-panel-links a.nav-cta:hover{background:linear-gradient(135deg, var(--violet-3), var(--violet-4)); opacity:0.9;}
+
+@media(max-width:640px){
+  .menu-panel{right:16px; left:16px; width:auto; top:76px;}
+}
+
+/* ---------- Hero ---------- */
+.hero{padding:108px 0 90px; position:relative;}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:0.85rem; color:var(--lilac-1); font-weight:600; letter-spacing:0.3px;
+  padding:7px 16px; border:1px solid var(--line-hi); border-radius:100px;
+  background:rgba(157,78,221,0.08); margin-bottom:28px;
+}
+.eyebrow .dot{width:7px; height:7px; border-radius:50%; background:var(--lilac-1); box-shadow:0 0 10px var(--lilac-1);}
+
+h1.hero-title{
+  font-family:var(--display); font-weight:900; line-height:1.08;
+  font-size:clamp(2.6rem, 6vw, 5rem);
+  background:linear-gradient(95deg, #fff 10%, var(--lilac-2) 55%, var(--violet-4) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  max-width:880px; margin-bottom:26px;
+}
+.hero-sub{
+  font-size:1.15rem; color:var(--text-mid); max-width:560px; margin-bottom:40px; font-weight:300;
+}
+.hero-actions{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:64px;}
+.btn{
+  padding:15px 32px; border-radius:100px; font-weight:600; font-size:1rem; border:none;
+  transition:transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease);
+  display:inline-flex; align-items:center; gap:8px;
+}
+.btn-primary{
+  background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
+  color:#10002B; box-shadow:0 6px 24px rgba(157,78,221,0.45);
+}
+.btn-primary:hover{transform:translateY(-3px); box-shadow:0 10px 32px rgba(199,125,255,0.55);}
+.btn-ghost{
+  background:transparent; color:var(--text-hi); border:1px solid var(--line-hi);
+}
+.btn-ghost:hover{background:rgba(199,125,255,0.08); border-color:var(--lilac-1);}
+
+.stats-row{display:flex; gap:48px; flex-wrap:wrap; padding-top:36px; border-top:1px solid var(--line);}
+.stat-num{
+  font-family:var(--display); font-weight:800; font-size:2.2rem; color:var(--lilac-2);
+  line-height:1;
+}
+.stat-label{font-size:0.88rem; color:var(--text-low); margin-top:6px;}
+
+/* Signature element: layered "stacked panes" visual representing the studio's layered creative process */
+.hero-visual{
+  position:absolute; left:0; top:90px; width:38%; height:520px;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.pane{
+  position:absolute; border-radius:22px; border:1px solid var(--line-hi);
+  backdrop-filter:blur(6px);
+}
+.pane-1{width:240px; height:300px; background:linear-gradient(160deg, rgba(123,44,191,0.35), rgba(36,0,70,0.2)); transform:rotate(-8deg) translate(-10px,10px); animation:float1 8s ease-in-out infinite;}
+.pane-2{width:240px; height:300px; background:linear-gradient(160deg, rgba(157,78,221,0.3), rgba(60,9,108,0.25)); transform:rotate(4deg) translate(30px,-20px); animation:float2 9s ease-in-out infinite;}
+.pane-3{width:240px; height:300px; background:linear-gradient(160deg, rgba(199,125,255,0.22), rgba(90,24,154,0.18)); transform:rotate(-2deg) translate(60px,40px); animation:float3 10s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:rotate(-8deg) translate(-10px,10px);}50%{transform:rotate(-6deg) translate(-10px,-6px);}}
+@keyframes float2{0%,100%{transform:rotate(4deg) translate(30px,-20px);}50%{transform:rotate(6deg) translate(34px,-4px);}}
+@keyframes float3{0%,100%{transform:rotate(-2deg) translate(60px,40px);}50%{transform:rotate(-4deg) translate(56px,26px);}}
+@media(max-width:1024px){.hero-visual{display:none;}}
+
+/* ---------- Section shared ---------- */
+section{padding:100px 0;}
+.section-head{max-width:640px; margin-bottom:56px;}
+.section-eyebrow{
+  font-size:0.85rem; color:var(--violet-4); font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+  margin-bottom:14px; display:block; font-family:var(--display);
+}
+[dir="rtl"] .section-eyebrow{letter-spacing:0;}
+h2.section-title{
+  font-family:var(--display); font-weight:800; font-size:clamp(1.9rem,3.4vw,2.8rem);
+  color:var(--text-hi); margin-bottom:14px;
+}
+.section-desc{color:var(--text-mid); font-size:1.05rem; font-weight:300;}
+
+/* ---------- Team strip ---------- */
+.team-strip{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:8px;
+}
+.avatar-stack{display:flex;}
+.avatar-stack .av{
+  width:42px; height:42px; border-radius:50%; border:2px solid var(--ink-0);
+  margin-right:-12px; background:linear-gradient(135deg,var(--violet-3),var(--lilac-1));
+  display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:800; font-size:0.95rem; color:var(--ink-0);
+}
+
+/* ---------- Services ---------- */
+.services-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:24px;}
+@media(max-width:900px){.services-grid{grid-template-columns:1fr;}}
+.service-card{
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:var(--radius); padding:36px 30px;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+}
+.service-card:hover{
+  transform:translateY(-6px); border-color:var(--line-hi);
+  background:linear-gradient(165deg, rgba(90,24,154,0.55), rgba(36,0,70,0.4));
+}
+.service-icon{font-size:1.9rem; margin-bottom:20px; display:block;}
+.service-card h3{font-family:var(--display); font-size:1.3rem; font-weight:700; margin-bottom:12px; color:var(--text-hi);}
+.service-card p{color:var(--text-mid); font-size:0.96rem; margin-bottom:20px;}
+.service-list{list-style:none;}
+.service-list li{
+  color:var(--text-mid); font-size:0.9rem; padding:7px 0 7px 0; padding-right:22px; position:relative; border-top:1px solid var(--line);
+}
+.service-list li:first-child{border-top:none;}
+.service-list li::before{
+  content:'◆'; position:absolute; right:0; color:var(--violet-4); font-size:0.6rem; top:13px;
+}
+
+/* ---------- Portfolio ---------- */
+.filter-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:38px;}
+.filter-btn{
+  background:transparent; border:1px solid var(--line); color:var(--text-mid);
+  padding:9px 20px; border-radius:100px; font-size:0.9rem; font-weight:500;
+  transition:all .25s var(--ease);
+}
+.filter-btn:hover{border-color:var(--line-hi); color:var(--text-hi);}
+.filter-btn.active{background:var(--violet-4); border-color:var(--violet-4); color:#10002B; font-weight:700;}
+
+.portfolio-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+@media(max-width:900px){.portfolio-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.portfolio-grid{grid-template-columns:1fr;}}
+
+.pf-item{
+  position:relative; border-radius:16px; overflow:hidden; aspect-ratio:4/5; cursor:pointer;
+  border:1px solid var(--line); background:linear-gradient(160deg, rgba(60,9,108,0.6), rgba(16,0,43,0.6));
+}
+.pf-item img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease);}
+.pf-item:hover img{transform:scale(1.08);}
+.pf-overlay{
+  position:absolute; inset:0; background:linear-gradient(0deg, rgba(16,0,43,0.92) 0%, rgba(16,0,43,0.1) 60%);
+  display:flex; flex-direction:column; justify-content:flex-end; padding:20px; opacity:0; transition:opacity .3s var(--ease);
+}
+.pf-item:hover .pf-overlay{opacity:1;}
+.pf-overlay .cat{font-size:0.78rem; color:var(--lilac-1); font-weight:600; margin-bottom:4px;}
+.pf-overlay .ttl{font-family:var(--display); font-weight:700; font-size:1.05rem;}
+.pf-empty-icon{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:2.4rem; opacity:0.25;
+}
+.pf-empty-state{
+  grid-column:1/-1; text-align:center; padding:70px 20px; color:var(--text-low);
+  border:1px dashed var(--line-hi); border-radius:18px;
+}
+.pf-empty-state .big{font-size:2.2rem; margin-bottom:14px;}
+
+/* lightbox */
+.lightbox{
+  position:fixed; inset:0; z-index:200; background:rgba(16,0,43,0.94); backdrop-filter:blur(10px);
+  display:none; align-items:center; justify-content:center; padding:30px;
+}
+.lightbox.show{display:flex;}
+.lightbox-inner{position:relative; max-width:900px; width:100%;}
+.lightbox img, .lightbox iframe{width:100%; max-height:78vh; border-radius:14px; display:block; object-fit:contain; background:var(--ink-1);}
+.lightbox-close{
+  position:absolute; top:-46px; left:0; background:none; border:none; color:#fff; font-size:1.8rem;
+}
+.lightbox-nav{position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.1); border:1px solid var(--line-hi); color:#fff; width:44px; height:44px; border-radius:50%; font-size:1.3rem; display:flex; align-items:center; justify-content:center;}
+.lightbox-prev{right:-60px;} .lightbox-next{left:-60px;}
+@media(max-width:760px){.lightbox-prev{right:6px;} .lightbox-next{left:6px;}}
+
+/* ---------- Testimonials ---------- */
+.test-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
+@media(max-width:900px){.test-grid{grid-template-columns:1fr;}}
+.test-card{
+  background:rgba(60,9,108,0.32); border:1px solid var(--line); border-radius:var(--radius);
+  padding:30px; display:flex; flex-direction:column; gap:18px;
+}
+.stars{color:var(--lilac-1); font-size:1rem; letter-spacing:2px;}
+.test-text{color:var(--text-mid); font-size:0.96rem; flex-grow:1;}
+.test-author{display:flex; align-items:center; gap:12px;}
+.test-avatar{
+  width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--violet-3),var(--lilac-1));
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-family:var(--display); color:var(--ink-0);
+}
+.test-name{font-weight:700; font-size:0.92rem; color:var(--text-hi);}
+.test-role{font-size:0.8rem; color:var(--text-low);}
+
+/* ---------- Contact / CTA ---------- */
+.cta-section{
+  border-radius:28px; padding:70px 50px; text-align:center; position:relative; overflow:hidden;
+  background:linear-gradient(135deg, var(--violet-1), var(--ink-1) 60%);
+  border:1px solid var(--line-hi);
+}
+.cta-section::before{
+  content:''; position:absolute; width:400px; height:400px; border-radius:50%;
+  background:radial-gradient(circle, var(--violet-4), transparent 70%); opacity:0.35; filter:blur(60px);
+  top:-150px; right:-100px;
+}
+.cta-section h2{font-family:var(--display); font-weight:800; font-size:clamp(1.8rem,3.6vw,2.6rem); margin-bottom:16px; position:relative;}
+.cta-section p{color:var(--text-mid); max-width:520px; margin:0 auto 36px; position:relative; font-weight:300;}
+.cta-actions{display:flex; gap:16px; justify-content:center; flex-wrap:wrap; position:relative;}
+
+/* ---------- Footer ---------- */
+footer{padding:60px 0 30px; border-top:1px solid var(--line);}
+.footer-grid{display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:40px; margin-bottom:50px;}
+@media(max-width:760px){.footer-grid{grid-template-columns:1fr 1fr; row-gap:36px;}}
+.footer-brand p{color:var(--text-low); font-size:0.9rem; margin-top:14px; max-width:280px;}
+.footer-col h4{font-size:0.92rem; color:var(--text-hi); margin-bottom:16px; font-weight:700;}
+.footer-col ul{list-style:none; display:flex; flex-direction:column; gap:10px;}
+.footer-col a{color:var(--text-low); font-size:0.9rem; transition:color .2s;}
+.footer-col a:hover{color:var(--lilac-1);}
+.footer-bottom{
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;
+  padding-top:26px; border-top:1px solid var(--line); color:var(--text-low); font-size:0.85rem;
+}
+.admin-link{color:var(--text-low); opacity:0.5; font-size:0.78rem; transition:opacity .2s;}
+.admin-link:hover{opacity:1; color:var(--lilac-1);}
+
+/* ============================================
+   COMMENTS SECTION
+   ============================================ */
+#comments{ padding:80px 0; border-top:1px solid var(--line);}
+.comments-auth-bar{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+  background:rgba(60,9,108,0.25); border:1px solid var(--line); border-radius:16px;
+  padding:18px 24px; margin-bottom:32px;
+}
+.comments-auth-bar .user-info{ display:flex; align-items:center; gap:12px;}
+.comments-auth-bar .avatar{
+  width:40px; height:40px; border-radius:50%; object-fit:cover;
+  background:linear-gradient(135deg,var(--violet-3),var(--lilac-1));
+  display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+  overflow:hidden;
+}
+.comments-auth-bar .avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%;}
+.comments-auth-bar .user-name{ font-weight:700; font-size:0.95rem;}
+.comments-auth-bar .user-email{ font-size:0.8rem; color:var(--text-low);}
+.auth-btns{ display:flex; gap:10px; flex-wrap:wrap;}
+.btn-google{
+  display:flex; align-items:center; gap:8px;
+  background:#fff; color:#1a1a1a; border:none; padding:10px 20px; border-radius:100px;
+  font-size:0.88rem; font-weight:700; cursor:pointer; transition:transform .2s, box-shadow .2s;
+}
+.btn-google:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,0.25);}
+.btn-google svg{ width:18px; height:18px; flex-shrink:0;}
+.btn-email-login{
+  background:rgba(157,78,221,0.15); border:1px solid var(--line-hi); color:var(--lilac-2);
+  padding:10px 20px; border-radius:100px; font-size:0.88rem; font-weight:600; cursor:pointer;
+  transition:background .2s;
+}
+.btn-email-login:hover{ background:rgba(157,78,221,0.28);}
+.btn-signout{
+  background:rgba(255,77,109,0.1); border:1px solid rgba(255,77,109,0.3); color:#ff8fa3;
+  padding:8px 16px; border-radius:100px; font-size:0.82rem; font-weight:600; cursor:pointer;
+}
+
+.comment-form{
+  background:rgba(36,0,70,0.5); border:1px solid var(--line); border-radius:18px;
+  padding:24px; margin-bottom:36px;
+}
+.comment-form textarea{
+  width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--line); color:#fff;
+  padding:14px 18px; border-radius:14px; font-size:0.92rem; font-family:var(--body);
+  resize:none; min-height:100px; transition:border-color .2s; line-height:1.7;
+}
+.comment-form textarea:focus{ outline:none; border-color:var(--lilac-1);}
+.comment-form textarea::placeholder{ color:var(--text-low);}
+.comment-form-footer{
+  display:flex; align-items:center; justify-content:space-between; margin-top:14px; gap:12px;
+}
+.char-count{ font-size:0.8rem; color:var(--text-low);}
+.char-count.warn{ color:#f9a825;}
+.char-count.error{ color:#ff4d6d;}
+
+.comments-list{ display:flex; flex-direction:column; gap:18px;}
+.comment-card{
+  background:rgba(36,0,70,0.4); border:1px solid var(--line); border-radius:16px;
+  padding:20px 22px; position:relative; animation:fadeUp .35s var(--ease);
+}
+@keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+.comment-card-head{ display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+.comment-avatar{
+  width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0;
+  background:linear-gradient(135deg,var(--violet-3),var(--lilac-1));
+  display:flex; align-items:center; justify-content:center; font-size:1rem; overflow:hidden;
+}
+.comment-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%;}
+.comment-meta{ flex-grow:1;}
+.comment-name{ font-weight:700; font-size:0.92rem;}
+.comment-date{ font-size:0.78rem; color:var(--text-low); margin-top:2px;}
+.comment-body{ color:var(--text-mid); font-size:0.92rem; line-height:1.8; word-break:break-word;}
+.comment-del{
+  position:absolute; top:14px; left:14px;
+  background:rgba(255,77,109,0.1); border:1px solid rgba(255,77,109,0.25); color:#ff8fa3;
+  width:28px; height:28px; border-radius:8px; font-size:0.8rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .2s;
+}
+.comment-del:hover{ background:rgba(255,77,109,0.25);}
+.comments-empty{
+  text-align:center; padding:50px 20px; color:var(--text-low);
+}
+.comments-empty .ic{ font-size:3rem; margin-bottom:14px;}
+.comments-loading{ text-align:center; padding:30px; color:var(--text-low);}
+
+/* Auth modal (email sign in / sign up) */
+.auth-tabs{ display:flex; gap:0; margin-bottom:24px; border-radius:12px; overflow:hidden; border:1px solid var(--line);}
+.auth-tab{
+  flex:1; padding:12px; background:transparent; border:none; color:var(--text-mid);
+  font-size:0.9rem; font-weight:600; cursor:pointer; transition:background .2s, color .2s;
+}
+.auth-tab.active{ background:var(--violet-3); color:#fff;}
+
+/* ============================================
+   CHATBOT WIDGET
+   ============================================ */
+.chat-launcher{
+  position:fixed; top:calc(100vh - 86px); left:26px; z-index:120;
+  width:60px; height:60px; border-radius:50%; border:none;
+  background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
+  box-shadow:0 8px 30px rgba(157,78,221,0.55);
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+  transition:transform .3s var(--ease), box-shadow .3s var(--ease);
+  touch-action:none; user-select:none; -webkit-user-select:none;
+  cursor:grab;
+}
+.chat-launcher:hover{transform:scale(1.08);}
+.chat-launcher.dragging{
+  transition:none; cursor:grabbing; box-shadow:0 14px 40px rgba(157,78,221,0.7); transform:scale(1.1);
+}
+.chat-launcher .badge{
+  position:absolute; top:-4px; right:-4px; background:#ff4d6d; color:#fff; font-size:0.7rem;
+  width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;
+  pointer-events:none;
+}
+.chat-window{
+  position:fixed; top:100px; left:26px; z-index:120; width:360px; max-width:90vw; height:520px; max-height:75vh;
+  background:var(--ink-1); border:1px solid var(--line-hi); border-radius:20px; overflow:hidden;
+  display:none; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.chat-window.show{display:flex;}
+.chat-head{
+  background:linear-gradient(135deg, var(--violet-2), var(--violet-1)); padding:16px 18px;
+  display:flex; align-items:center; gap:12px;
+}
+.chat-head .av{width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.2rem;}
+.chat-head .info{flex-grow:1;}
+.chat-head .name{font-weight:700; font-size:0.95rem;}
+.chat-head .status{font-size:0.75rem; color:var(--lilac-2); display:flex; align-items:center; gap:5px;}
+.chat-head .status::before{content:''; width:6px; height:6px; border-radius:50%; background:#4ade80;}
+.chat-head button{background:none; border:none; color:#fff; font-size:1.2rem; opacity:0.8;}
+.chat-body{flex-grow:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px;}
+.chat-body::-webkit-scrollbar{width:5px;}
+.chat-body::-webkit-scrollbar-thumb{background:var(--violet-3); border-radius:10px;}
+.msg{max-width:80%; padding:11px 15px; border-radius:16px; font-size:0.88rem; line-height:1.6; animation:msgIn .3s var(--ease);}
+@keyframes msgIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+.msg.bot{background:var(--violet-1); align-self:flex-start; border-bottom-left-radius:4px;}
+.msg.user{background:var(--violet-4); color:var(--ink-0); align-self:flex-end; border-bottom-right-radius:4px; font-weight:500;}
+.chat-quick{display:flex; gap:8px; flex-wrap:wrap; padding:0 18px 12px;}
+.chip{
+  background:rgba(157,78,221,0.14); border:1px solid var(--line-hi); color:var(--lilac-2);
+  font-size:0.78rem; padding:7px 13px; border-radius:100px; white-space:nowrap;
+}
+.chip:hover{background:rgba(157,78,221,0.3);}
+.chat-input-row{display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--line);}
+.chat-input-row input{
+  flex-grow:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:#fff;
+  padding:11px 16px; border-radius:100px; font-size:0.88rem;
+}
+.chat-input-row input::placeholder{color:var(--text-low);}
+.chat-send{
+  width:42px; height:42px; border-radius:50%; border:none; flex-shrink:0;
+  background:linear-gradient(135deg, var(--violet-3), var(--lilac-1)); color:var(--ink-0); font-size:1.1rem;
+}
+.typing{display:flex; gap:4px; padding:4px 0;}
+.typing span{width:6px; height:6px; border-radius:50%; background:var(--text-low); animation:bounce 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:0.15s;} .typing span:nth-child(3){animation-delay:0.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0); opacity:0.5;} 30%{transform:translateY(-5px); opacity:1;}}
+
+@media(max-width:480px){
+  .chat-window{width:auto; max-width:calc(100vw - 20px);}
+}
+
+/* ============================================
+   ADMIN MODALS (login + dashboard)
+   ============================================ */
+.modal-overlay{
+  position:fixed; inset:0; z-index:300; background:rgba(16,0,43,0.85); backdrop-filter:blur(8px);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal-box{
+  background:var(--ink-1); border:1px solid var(--line-hi); border-radius:22px; width:100%; max-width:420px;
+  padding:38px 34px; position:relative; box-shadow:0 30px 80px rgba(0,0,0,0.5);
+}
+.modal-close{position:absolute; top:18px; left:18px; background:none; border:none; color:var(--text-low); font-size:1.4rem;}
+.modal-box h3{font-family:var(--display); font-size:1.5rem; font-weight:800; margin-bottom:8px; text-align:center;}
+.modal-box .sub{color:var(--text-mid); font-size:0.9rem; text-align:center; margin-bottom:28px;}
+.field{margin-bottom:18px;}
+.field label{display:block; font-size:0.85rem; color:var(--text-mid); margin-bottom:8px; font-weight:500;}
+.field input, .field textarea, .field select{
+  width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:#fff;
+  padding:12px 16px; border-radius:12px; font-size:0.92rem;
+}
+.field input:focus, .field textarea:focus, .field select:focus{border-color:var(--lilac-1);}
+.field textarea{resize:vertical; min-height:80px;}
+.field-pass{position:relative; display:flex; align-items:center;}
+.field-pass input{padding-inline-start:46px; width:100%;}
+.pass-toggle{
+  position:absolute; inset-inline-start:6px; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border:none; background:transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; border-radius:8px;
+  color:var(--text-mid); font-size:1.05rem; line-height:1; padding:0;
+  transition:color .2s var(--ease), background .2s var(--ease);
+}
+.pass-toggle:hover{color:var(--lilac-1); background:rgba(157,78,221,0.12);}
+.hint{font-size:0.78rem; color:var(--text-low); margin-top:6px;}
+.error-msg{color:#ff8fa3; font-size:0.85rem; text-align:center; margin-top:12px; min-height:18px;}
+.btn-block{width:100%; justify-content:center; margin-top:6px;}
+.demo-box{
+  margin-top:22px; padding:14px 16px; background:rgba(157,78,221,0.08); border:1px dashed var(--line-hi);
+  border-radius:12px; font-size:0.8rem; color:var(--text-mid); line-height:1.8;
+}
+.demo-box b{color:var(--lilac-2);}
+
+.status-lights{
+  display:flex; justify-content:center; gap:14px; margin-bottom:24px;
+}
+.status-lights .light{
+  width:14px; height:14px; border-radius:50%;
+  background:rgba(255,255,255,0.12); border:1px solid var(--line-hi);
+  box-shadow:inset 0 0 4px rgba(0,0,0,0.4);
+  transition:background .25s var(--ease), box-shadow .25s var(--ease);
+}
+.status-lights .light.red{
+  background:#ff4d6d; border-color:#ff4d6d;
+  box-shadow:0 0 12px rgba(255,77,109,0.8), inset 0 0 4px rgba(0,0,0,0.2);
+}
+.status-lights .light.green{
+  background:#4ade80; border-color:#4ade80;
+  box-shadow:0 0 12px rgba(74,222,128,0.8), inset 0 0 4px rgba(0,0,0,0.2);
+}
+
+/* ---------- Dashboard ---------- */
+.dash-overlay{
+  position:fixed; inset:0; z-index:300; background:var(--ink-0); display:none; overflow-y:auto;
+}
+.dash-overlay.show{display:block;}
+.dash-head{
+  position:sticky; top:0; z-index:5; background:rgba(16,0,43,0.92); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line); padding:18px 0;
+}
+.dash-head .wrap{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px;}
+.dash-title{display:flex; align-items:center; justify-content:center; gap:12px; font-family:var(--display); font-weight:800; font-size:1.2rem; grid-column:2;}
+.dash-home-btn{
+  grid-column:1; justify-self:start;
+  background:rgba(157,78,221,0.12); border:1px solid var(--line-hi); color:var(--text-hi);
+  padding:9px 18px; border-radius:100px; font-size:0.85rem; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+.dash-logout{
+  grid-column:3; justify-self:end;
+  background:rgba(255,77,109,0.12); border:1px solid rgba(255,77,109,0.4); color:#ff8fa3;
+  padding:9px 18px; border-radius:100px; font-size:0.85rem; font-weight:600;
+}
+.dash-body{padding:36px 0 80px;}
+.dash-tabs{display:flex; gap:10px; margin-bottom:32px; flex-wrap:wrap;}
+.dash-tab{
+  background:transparent; border:1px solid var(--line); color:var(--text-mid); padding:11px 22px;
+  border-radius:100px; font-size:0.9rem; font-weight:600; display:flex; align-items:center; gap:8px;
+}
+.dash-tab.active{background:var(--violet-3); border-color:var(--violet-3); color:#fff;}
+.dash-panel{display:none;}
+.dash-panel.active{display:block;}
+.dash-card{
+  background:rgba(60,9,108,0.3); border:1px solid var(--line); border-radius:18px; padding:28px; margin-bottom:24px;
+}
+.dash-card h4{font-family:var(--display); font-size:1.1rem; margin-bottom:18px; display:flex; align-items:center; gap:8px;}
+
+
+.cat-pills{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;}
+.cat-pill{
+  background:rgba(255,255,255,0.05); border:1px solid var(--line); color:var(--text-mid);
+  padding:8px 16px; border-radius:100px; font-size:0.85rem;
+}
+.cat-pill.active{background:var(--violet-4); color:var(--ink-0); border-color:var(--violet-4); font-weight:700;}
+
+.row-flex{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
+.row-flex .field{flex:1; min-width:200px; margin-bottom:0;}
+
+.item-list{display:flex; flex-direction:column; gap:10px; margin-top:20px;}
+.item-row{
+  display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  padding:12px 14px; border-radius:12px;
+}
+.item-row img, .item-row .thumb-ph{
+  width:50px; height:50px; border-radius:8px; object-fit:cover; flex-shrink:0; background:var(--violet-1);
+  display:flex; align-items:center; justify-content:center; font-size:1.2rem;
+}
+.item-row .meta{flex-grow:1; min-width:0;}
+.item-row .meta .t{font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.item-row .meta .c{font-size:0.78rem; color:var(--text-low);}
+.item-row .del{
+  background:rgba(255,77,109,0.12); border:none; color:#ff8fa3; width:32px; height:32px; border-radius:8px; font-size:1rem; flex-shrink:0;
+}
+.empty-row{color:var(--text-low); text-align:center; padding:30px; font-size:0.9rem;}
+
+.save-bar{position:sticky; bottom:0; background:var(--ink-0); padding:18px 0; border-top:1px solid var(--line); margin-top:10px; display:flex; gap:12px; justify-content:flex-end;}
+.toast{
+  position:fixed; bottom:30px; right:30px; z-index:400; background:var(--violet-4); color:var(--ink-0);
+  padding:14px 24px; border-radius:12px; font-weight:600; font-size:0.9rem; box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  display:none; align-items:center; gap:10px;
+}
+.toast.show{display:flex; animation:toastIn .3s var(--ease);}
+@keyframes toastIn{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+.export-box{
+  background:rgba(0,0,0,0.3); border:1px solid var(--line); border-radius:12px; padding:18px;
+  font-family:monospace; font-size:0.78rem; color:var(--lilac-2); max-height:220px; overflow:auto;
+  white-space:pre-wrap; word-break:break-all; margin-top:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="aurora"></div>
+<div class="grain"></div>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="wrap nav">
+    <img src="data:image/png;base64,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" alt="Creatix Studio" class="logo-img">
+  </div>
+</header>
+
+<!-- Fixed corner controls -->
+<button class="corner-btn menu-btn" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false">
+  <span class="menu-bars"><span></span><span></span><span></span></span>
+</button>
+
+<button class="corner-btn add-btn hidden" id="navDesignerBtn" onclick="openDesignerLogin();" aria-label="أضف تصميماتك">
+  <span class="add-plus">+</span>
+</button>
+
+<!-- Dropdown menu panel -->
+<div class="menu-panel" id="menuPanel">
+  <nav class="menu-panel-links">
+    <a href="#about" onclick="closeMenu()">من نحن</a>
+    <a href="#services" onclick="closeMenu()">الخدمات</a>
+    <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
+    <a href="#testimonials" onclick="closeMenu()">آراء العملاء</a>
+    <a href="#comments" onclick="closeMenu()">التعليقات</a>
+    <a href="#contact" onclick="closeMenu()">تواصل معنا</a>
+    <a href="#contact" class="nav-cta" onclick="closeMenu()">ابدأ مشروعك</a>
+  </nav>
+</div>
+<div class="menu-backdrop" id="menuBackdrop" onclick="closeMenu()"></div>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-visual">
+      <div class="pane pane-3"></div>
+      <div class="pane pane-2"></div>
+      <div class="pane pane-1"></div>
+    </div>
+    <div class="wrap">
+      <span class="eyebrow"><span class="dot"></span> Creatix Studio Team</span>
+      <h1 class="hero-title">فريق بيحوّل الفكرة لهوية بصرية متكاملة</h1>
+      <p class="hero-sub">إحنا فريق Creatix Studio — مصممين، مطورين، ومونتيرين شغالين سوا عشان كل براند يطلع بصوت بصري مميز. شغلنا مش تصاميم منفصلة، ده تجربة متكاملة من أول الفكرة لحد التنفيذ.</p>
+      <div class="hero-actions">
+        <a href="#portfolio" class="btn btn-primary">شاهدوا أعمالنا</a>
+        <a href="#contact" class="btn btn-ghost">تواصلوا معانا</a>
+      </div>
+      <div class="stats-row">
+        <div><div class="stat-num">36+</div><div class="stat-label">مشروع منجز</div></div>
+        <div><div class="stat-num">20+</div><div class="stat-label">عميل سعيد</div></div>
+        <div><div class="stat-num">5+</div><div class="stat-label">سنوات خبرة جماعية</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">من نحن</span>
+        <h2 class="section-title">استوديو بيشتغل بعقلية واحدة</h2>
+        <p class="section-desc">Creatix Studio فريق متكامل من مصممين ومطورين ومونتيرين، كل واحد فينا متخصص في جزء، لكن شغلنا كله بيتلاقى في هدف واحد: هوية بصرية بتخلي براندك يتكلم من غير ما تقول حاجة. كل مشروع بنبدأه بسؤال واحد: إيه اللي هيخليه يفرق فعلاً؟</p>
+      </div>
+      <div class="team-strip">
+        <div class="avatar-stack">
+          <div class="av">C</div><div class="av">R</div><div class="av">X</div>
+        </div>
+        <span style="color:var(--text-low); font-size:0.9rem;">فريق Creatix Studio — تصميم، تطوير، مونتاج</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section id="services">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">الخدمات</span>
+        <h2 class="section-title">كل حاجة محتاجها لتبني حضورك الرقمي</h2>
+        <p class="section-desc">من الفكرة الأولى لحد التسليم النهائي — فريقنا بيغطي الجرافيك والويب والفيديو في مكان واحد.</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card" id="secretCard">
+          <span class="service-icon">🎨</span>
+          <h3>الجرافيك ديزاين</h3>
+          <p>تصاميم بصرية تعبر عن هوية براندك وتفرق في السوق.</p>
+          <ul class="service-list">
+            <li>تصميم الشعارات واللوجوهات</li>
+            <li>هوية بصرية متكاملة</li>
+            <li>تصاميم سوشيال ميديا</li>
+            <li>مواد تسويقية ودعائية</li>
+          </ul>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">💻</span>
+          <h3>تصميم الويب</h3>
+          <p>مواقع ويب احترافية سريعة وعلى مستوى عالمي — مش بس جميلة، فعّالة وبتحقق نتائج.</p>
+          <ul class="service-list">
+            <li>مواقع Landing Page احترافية</li>
+            <li>مواقع للمعلمين والأكاديميات</li>
+            <li>تصميم متجاوب مع كل الأجهزة</li>
+            <li>أداء عالي وسرعة تحميل</li>
+          </ul>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">🎬</span>
+          <h3>مونتاج الفيديوهات</h3>
+          <p>مونتاج احترافي يحول اللقطات العادية لمحتوى مميز وجذاب يزيد التفاعل.</p>
+          <ul class="service-list">
+            <li>مونتاج إعلانات وريلز</li>
+            <li>فيديوهات تعليمية</li>
+            <li>مؤثرات بصرية وموشن</li>
+            <li>تعديل الألوان وتحسين الجودة</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section id="portfolio">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">أعمالنا</span>
+        <h2 class="section-title">مجموعة مختارة من أحسن مشاريعنا</h2>
+        <p class="section-desc">كل مشروع هنا بيمثل تعاون كامل بين فريقنا — من الفكرة لحد التنفيذ.</p>
+      </div>
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" data-filter="all">الكل</button>
+        <button class="filter-btn" data-filter="edu">التصميمات التعليمية</button>
+        <button class="filter-btn" data-filter="logo">الشعارات</button>
+        <button class="filter-btn" data-filter="brand">الهوية البصرية</button>
+      </div>
+      <div class="portfolio-grid" id="portfolioGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ TESTIMONIALS ============ -->
+  <section id="testimonials">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">آراء العملاء</span>
+        <h2 class="section-title">بيقولوا إيه؟</h2>
+        <p class="section-desc">تقييمات حقيقية من عملاء اشتغلوا مع فريق Creatix Studio.</p>
+      </div>
+      <div class="test-grid" id="testGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ COMMENTS ============ -->
+  <section id="comments">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">المجتمع</span>
+        <h2 class="section-title">شارك رأيك 💬</h2>
+        <p class="section-desc">سجّل دخولك وشاركنا رأيك أو تجربتك مع Creatix Studio.</p>
+      </div>
+
+      <!-- Auth bar -->
+      <div class="comments-auth-bar" id="commentsAuthBar">
+        <!-- filled by JS -->
+        <div class="auth-btns">
+          <button class="btn-google" onclick="signInGoogle()">
+            <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.2l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.3C9.7 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C43.1 35.2 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+            دخول بـ Google
+          </button>
+          <button class="btn-email-login" onclick="openAuthModal()">✉️ دخول بالإيميل</button>
+        </div>
+      </div>
+
+      <!-- Comment form (shown when logged in) -->
+      <div class="comment-form" id="commentForm" style="display:none;">
+        <textarea id="commentText" placeholder="شارك رأيك هنا..." maxlength="500" oninput="updateCharCount()"></textarea>
+        <div class="comment-form-footer">
+          <span class="char-count" id="charCount">0 / 500</span>
+          <button class="btn btn-primary" id="commentSubmitBtn" onclick="window.__submitComment && window.__submitComment()">نشر التعليق 💬</button>
+        </div>
+      </div>
+
+      <!-- Comments list -->
+      <div class="comments-list" id="commentsList">
+        <div class="comments-loading">⏳ جاري التحميل...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT / CTA ============ -->
+  <section id="contact">
+    <div class="wrap">
+      <div class="cta-section">
+        <h2>خلونا نشتغل سوا</h2>
+        <p>عندك مشروع؟ فريق Creatix Studio مستعد. إحنا مش مجرد مصممين — إحنا شريكك في بناء حضورك الرقمي. ابعتلنا رسالة ونرد عليك في أقرب وقت.</p>
+        <div class="cta-actions">
+          <a href="https://wa.me/201223093974" target="_blank" rel="noopener" class="btn btn-primary">تواصل واتساب 💬</a>
+          <a href="#" class="btn btn-ghost">كل لينكاتنا 🔗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo"><span class="logo-mark">C</span> Creatix Studio</div>
+        <p>فريق تصميم جرافيك، تطوير ويب، ومونتاج فيديو. بنصنع هويات بصرية بتفرق فعلاً.</p>
+      </div>
+      <div class="footer-col">
+        <h4>القائمة</h4>
+        <ul>
+          <li><a href="#hero">الرئيسية</a></li>
+          <li><a href="#services">الخدمات</a></li>
+          <li><a href="#about">من نحن</a></li>
+          <li><a href="#portfolio">أعمالنا</a></li>
+          <li><a href="#testimonials">آراء العملاء</a></li>
+          <li><a href="#comments">التعليقات</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>تواصل</h4>
+        <ul>
+          <li><a href="mailto:hello@creatixstudio.com">راسلنا</a></li>
+          <li><a href="https://wa.me/201223093974">واتساب</a></li>
+          <li><a href="#">كل لينكاتنا</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>السوشيال</h4>
+        <ul>
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">Facebook</a></li>
+          <li><a href="#">TikTok</a></li>
+          <li><a href="#">Behance</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 <b>Creatix Studio</b> — كل الحقوق محفوظة</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ CHATBOT ============ -->
+<button class="chat-launcher" id="chatLauncher" aria-label="افتح الشات بوت">
+  🤖 <span class="badge" id="chatBadge">1</span>
+</button>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-head">
+    <div class="av">🤖</div>
+    <div class="info">
+      <div class="name">Creatix Bot</div>
+      <div class="status">متصل الآن</div>
+    </div>
+    <button onclick="toggleChat(false)">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-quick" id="chatQuick">
+    <button class="chip" onclick="botQuick('services')">🎨 الخدمات</button>
+    <button class="chip" onclick="botQuick('price')">💰 الأسعار</button>
+    <button class="chip" onclick="botQuick('time')">⏰ التسليم</button>
+    <button class="chip" onclick="botQuick('contact')">📞 تواصل</button>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- ============ LIGHTBOX ============ -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(1)">›</button>
+    <button class="lightbox-nav lightbox-next" onclick="navLightbox(-1)">‹</button>
+    <div id="lightboxContent"></div>
+  </div>
+</div>
+
+<!-- ============ EMAIL AUTH MODAL (Sign in / Sign up) ============ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    <h3>أهلاً بيك 👋</h3>
+    <p class="sub">سجّل دخولك أو أنشئ حساب جديد عشان تكتب تعليق</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">حساب جديد</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="authLoginForm">
+      <div class="field">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="authEmail" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')submitAuth()">
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <div class="field-pass">
+          <input type="password" id="authPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()">
+          <button type="button" class="pass-toggle" onclick="togglePasswordVisibility('authPass',this)" aria-label="إظهار">👁️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Register form -->
+    <div id="authRegisterForm" style="display:none;">
+      <div class="field">
+        <label>الاسم الظاهر</label>
+        <input type="text" id="authName" placeholder="مثال: أحمد محمد">
+      </div>
+      <div class="field">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="authEmailReg" placeholder="example@mail.com">
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <div class="field-pass">
+          <input type="password" id="authPassReg" placeholder="8 أحرف على الأقل" onkeydown="if(event.key==='Enter')submitAuth()">
+          <button type="button" class="pass-toggle" onclick="togglePasswordVisibility('authPassReg',this)" aria-label="إظهار">👁️</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="authSubmitBtn" onclick="submitAuth()">دخول 🔐</button>
+    <div class="error-msg" id="authError"></div>
+
+    <div style="margin-top:20px; text-align:center;">
+      <button class="btn-google" style="margin:0 auto; justify-content:center;" onclick="closeAuthModal(); signInGoogle()">
+        <svg viewBox="0 0 48 48" style="width:18px;height:18px;"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.2l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.3C9.7 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C43.1 35.2 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+        أو دخول بـ Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN LOGIN MODAL ============ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAdminLogin()">✕</button>
+    <h3>لوحة التحكم 🔐</h3>
+    <p class="sub">سجّل دخولك للوصول إلى لوحة إدارة الموقع</p>
+    <div class="status-lights" id="adminLights">
+      <span class="light" data-i="1"></span>
+      <span class="light" data-i="2"></span>
+      <span class="light" data-i="3"></span>
+    </div>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="adminEmail" placeholder="example@creatix.com" onkeydown="if(event.key==='Enter')tryLogin()">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <div class="field-pass">
+        <input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryLogin()">
+        <button type="button" class="pass-toggle" id="adminPassToggle" onclick="togglePasswordVisibility('adminPass','adminPassToggle')" aria-label="إظهار كلمة المرور">👁️</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="tryLogin()">دخول 🔐</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ============ DESIGNER LOGIN MODAL ============ -->
+<div class="modal-overlay" id="designerLoginModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeDesignerLogin()">✕</button>
+    <h3>أضف تصميماتك 🎨</h3>
+    <p class="sub">سجّل دخولك عشان تضيف أعمالك مباشرة على الموقع</p>
+    <div class="status-lights" id="designerLights">
+      <span class="light" data-i="1"></span>
+      <span class="light" data-i="2"></span>
+      <span class="light" data-i="3"></span>
+    </div>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="designerEmail" placeholder="example@design.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <div class="field-pass">
+        <input type="password" id="designerPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')tryDesignerLogin()">
+        <button type="button" class="pass-toggle" id="designerPassToggle" onclick="togglePasswordVisibility('designerPass','designerPassToggle')" aria-label="إظهار كلمة المرور">👁️</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" id="designerLoginBtn" onclick="tryDesignerLogin()">دخول 🔐</button>
+    <div class="error-msg" id="designerLoginError"></div>
+  </div>
+</div>
+
+<!-- ============ ADMIN DASHBOARD ============ -->
+<div class="dash-overlay" id="dashOverlay">
+  <div class="dash-head">
+    <div class="wrap">
+      <button class="dash-home-btn" onclick="goHome()">🏠 الصفحة الرئيسية</button>
+      <div class="dash-title">لوحة التحكم</div>
+      <button class="dash-logout" onclick="logoutAdmin()">تسجيل الخروج ⏏</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="wrap">
+      <div class="dash-tabs">
+        <button class="dash-tab active" data-tab="works" onclick="switchTab('works')">🖼️ إدارة الأعمال</button>
+        <button class="dash-tab" data-tab="reviews" onclick="switchTab('reviews')">💬 آراء العملاء</button>
+        <button class="dash-tab" data-tab="comments" onclick="switchTab('comments'); window.__loadAdminComments && window.__loadAdminComments()">🗨️ تعليقات الزوار</button>
+        <button class="dash-tab" data-tab="bot" onclick="switchTab('bot')">🤖 الشات بوت</button>
+      </div>
+
+      <!-- WORKS PANEL -->
+      <div class="dash-panel active" id="panel-works">
+        <div class="dash-card">
+          <h4>🔗 إضافة عمل جديد</h4>
+
+          <div class="row-flex" style="margin-bottom:20px;">
+            <div class="field" style="flex:1;">
+              <label>رابط الصورة المباشر</label>
+              <input type="text" id="imgUrlInput" placeholder="https://i.ibb.co/xxxxx/image.jpg">
+            </div>
+            <button class="btn btn-primary" onclick="addByUrl()" style="align-self:flex-end;">+ إضافة</button>
+          </div>
+
+          <div class="field">
+            <label>عنوان العمل (اختياري)</label>
+            <input type="text" id="workTitleInput" placeholder="مثال: هوية بصرية لمطعم">
+          </div>
+
+          <div class="field">
+            <label>تصنيف العمل</label>
+            <div class="cat-pills" id="addCatPills">
+              <button class="cat-pill active" data-cat="edu">📚 تصميمات تعليمية</button>
+              <button class="cat-pill" data-cat="logo">✏️ شعارات</button>
+              <button class="cat-pill" data-cat="brand">🏷️ هوية بصرية</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h4>📋 الأعمال المضافة (<span id="worksCount">0</span>)</h4>
+          <div class="item-list" id="worksList"></div>
+        </div>
+
+        <div class="save-bar">
+          <button class="btn btn-primary" onclick="saveWorks()">💾 حفظ التغييرات</button>
+        </div>
+      </div>
+
+      <!-- REVIEWS PANEL -->
+      <div class="dash-panel" id="panel-reviews">
+        <div class="dash-card">
+          <h4>+ إضافة تقييم جديد</h4>
+          <div class="row-flex" style="margin-bottom:18px;">
+            <div class="field"><label>اسم العميل</label><input type="text" id="revName" placeholder="مثال: أحمد محمد"></div>
+            <div class="field"><label>الوظيفة / الشركة</label><input type="text" id="revRole" placeholder="مثال: صاحب مشروع"></div>
+          </div>
+          <div class="field">
+            <label>عدد النجوم</label>
+            <select id="revStars">
+              <option value="5">⭐⭐⭐⭐⭐</option>
+              <option value="4">⭐⭐⭐⭐</option>
+              <option value="3">⭐⭐⭐</option>
+            </select>
+          </div>
+          <div class="field"><label>نص التقييم</label><textarea id="revText" placeholder="رأي العميل في التعامل مع الفريق..."></textarea></div>
+          <button class="btn btn-ghost" onclick="addReview()">+ إضافة التقييم</button>
+        </div>
+        <div class="dash-card">
+          <h4>📋 التقييمات الحالية</h4>
+          <div class="item-list" id="reviewsList"></div>
+        </div>
+        <div class="save-bar">
+          <button class="btn btn-primary" onclick="saveReviews()">💾 حفظ التغييرات</button>
+        </div>
+      </div>
+
+      <!-- COMMENTS PANEL -->
+      <div class="dash-panel" id="panel-comments">
+        <div class="dash-card">
+          <h4>🗨️ تعليقات الزوار (<span id="adminCommentsCount">0</span>)</h4>
+          <div class="item-list" id="adminCommentsList">
+            <p style="color:var(--text-low); font-size:0.9rem;">اضغط على التاب عشان تحمّل التعليقات...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOT PANEL -->
+      <div class="dash-panel" id="panel-bot">
+        <div class="dash-card">
+          <h4>🤖 نصوص ردود الشات بوت</h4>
+          <p style="color:var(--text-mid); font-size:0.88rem; margin-bottom:20px;">تعديل الردود دي بيغير إجابات البوت فورًا في متصفحك.</p>
+          <div class="field"><label>رسالة الترحيب</label><textarea id="botWelcome"></textarea></div>
+          <div class="field"><label>الرد على "الخدمات"</label><textarea id="botServices"></textarea></div>
+          <div class="field"><label>الرد على "الأسعار"</label><textarea id="botPrice"></textarea></div>
+          <div class="field"><label>الرد على "مدة التسليم"</label><textarea id="botTime"></textarea></div>
+          <div class="field"><label>الرد على "تواصل"</label><textarea id="botContact"></textarea></div>
+        </div>
+        <div class="save-bar">
+          <button class="btn btn-primary" onclick="saveBotTexts()">💾 حفظ نصوص البوت</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   DATA LAYER — localStorage backed
+   ============================================ */
+const LS_KEYS = { works:'creatix_works', reviews:'creatix_reviews', bot:'creatix_bot_texts' };
+
+// Starter portfolio data — empty image src, ready for admin to fill via links
+const DEFAULT_WORKS = [
+  {id:1, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/fdCmYwG3/image.png'},
+  {id:2, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/Sj4Q4k6/image.png'},
+  {id:3, cat:'logo', title:'شعار براند', type:'image', src:''},
+  {id:4, cat:'brand', title:'هوية بصرية متكاملة', type:'image', src:''},
+];
+
+const DEFAULT_REVIEWS = [
+  {id:1, name:'سارة أحمد', role:'صاحبة براند ملابس', stars:5, text:'تعامل احترافي جدًا والفريق فهم رؤيتنا من أول جلسة. الهوية البصرية طلعت أحسن من المتوقع.'},
+  {id:2, name:'محمود حسن', role:'مؤسس ستارت أب', stars:5, text:'الموقع اللي عملوه لينا سريع وشكله احترافي. التواصل كان سهل وسريع طول المشروع.'},
+  {id:3, name:'نور الدين', role:'صانع محتوى', stars:5, text:'مونتاج الفيديوهات غيّر شكل المحتوى بتاعي بالكامل. التفاعل زاد بشكل ملحوظ بعد ما اشتغلت معاهم.'},
+];
+
+const DEFAULT_BOT = {
+  welcome: 'أهلاً بيك! 👋 أنا بوت فريق Creatix Studio، اسألني عن خدماتنا، الأسعار، أو مواعيد التسليم.',
+  services: 'فريقنا بيقدم 3 خدمات أساسية: 🎨 جرافيك ديزاين (شعارات وهوية بصرية)، 💻 تصميم وتطوير مواقع، 🎬 مونتاج فيديوهات احترافي. تحب تعرف تفاصيل أكتر عن أي خدمة؟',
+  price: 'الأسعار بتختلف حسب حجم المشروع ومتطلباته. كلم فريقنا على واتساب وهنبعتلك عرض سعر مخصص لمشروعك خلال وقت قصير.',
+  time: 'مدة التسليم بتختلف حسب نوع المشروع: التصاميم البسيطة 2-3 أيام، الهوية البصرية الكاملة أسبوع لأسبوعين، مواقع الويب من أسبوعين لشهر حسب التعقيد.',
+  contact: 'تقدر تتواصل مع فريقنا مباشرة على واتساب وهنرد عليك بأسرع وقت ممكن. تحب أفتحلك الرابط؟'
+};
+
+function loadData(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return JSON.parse(JSON.stringify(fallback));
+    return JSON.parse(raw);
+  }catch(e){ return JSON.parse(JSON.stringify(fallback)); }
+}
+function saveData(key, data){
+  try{ localStorage.setItem(key, JSON.stringify(data)); return true; }catch(e){ return false; }
+}
+
+let WORKS = loadData(LS_KEYS.works, DEFAULT_WORKS);
+let REVIEWS = loadData(LS_KEYS.reviews, DEFAULT_REVIEWS);
+let BOT_TEXTS = loadData(LS_KEYS.bot, DEFAULT_BOT);
+let currentFilter = 'all';
+let lightboxIndex = 0;
+let lightboxList = [];
+
+/* ============================================
+   SECRET COMBO — 🎨 card click trigger
+   ============================================ */
+(function(){
+  let clickCount = 0;
+  let resetTimer = null;
+  const card = document.getElementById('secretCard');
+  if(!card) return;
+  card.addEventListener('click', function(){
+    clickCount++;
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(function(){ clickCount = 0; }, 2000);
+    if(clickCount >= 5){
+      clickCount = 0;
+      clearTimeout(resetTimer);
+      openAdminLogin();
+    }
+  });
+})();
+
+/* ============================================
+   NAV
+   ============================================ */
+const menuBtn = document.getElementById('menuBtn');
+const menuPanel = document.getElementById('menuPanel');
+const menuBackdrop = document.getElementById('menuBackdrop');
+menuBtn.addEventListener('click', ()=>{
+  const isOpen = menuPanel.classList.contains('show');
+  toggleMenu(!isOpen);
+});
+function toggleMenu(open){
+  menuPanel.classList.toggle('show', open);
+  menuBackdrop.classList.toggle('show', open);
+  menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeMenu(){ toggleMenu(false); }
+
+/* ============================================
+   RENDER PORTFOLIO
+   ============================================ */
+const catLabels = {edu:'تصميمات تعليمية', logo:'شعارات', brand:'هوية بصرية'};
+const catIcons  = {edu:'📚', logo:'✏️', brand:'🏷️'};
+
+function renderPortfolio(){
+  const grid = document.getElementById('portfolioGrid');
+  const list = currentFilter==='all' ? WORKS : WORKS.filter(w=>w.cat===currentFilter);
+  if(list.length===0){
+    grid.innerHTML = `<div class="pf-empty-state"><div class="big">🖼️</div>لسه مفيش أعمال مضافة في القسم ده.<br>الأدمن هيضيفها قريب.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map((w,i)=>{
+    const hasImg = w.src && w.src.trim() !== '';
+    const inner = hasImg
+      ? (w.type==='youtube'
+          ? `<img src="https://img.youtube.com/vi/${ytId(w.src)}/hqdefault.jpg" alt="${w.title}">`
+          : `<img src="${w.src}" alt="${w.title}" onerror="this.parentElement.querySelector('.pf-empty-icon').style.display='flex'; this.style.display='none';">`)
+      : '';
+    return `<div class="pf-item" onclick="openLightbox('${w.cat}', ${list.indexOf(w)})">
+      ${inner}
+      <div class="pf-empty-icon" style="display:${hasImg?'none':'flex'}">${catIcons[w.cat]||'🖼️'}</div>
+      <div class="pf-overlay"><div class="cat">${catLabels[w.cat]||w.cat}</div><div class="ttl">${w.title||''}</div></div>
+    </div>`;
+  }).join('');
+  lightboxList = list;
+}
+
+function ytId(url){
+  if(!url) return '';
+  const m = url.match(/(?:youtu\.be\/|v=|embed\/)([a-zA-Z0-9_-]{6,})/);
+  return m ? m[1] : '';
+}
+
+document.getElementById('filterRow').addEventListener('click', (e)=>{
+  if(!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderPortfolio();
+});
+
+/* ---------- Lightbox ---------- */
+function openLightbox(cat, idx){
+  lightboxIndex = idx;
+  showLightboxItem();
+  document.getElementById('lightbox').classList.add('show');
+}
+function showLightboxItem(){
+  const item = lightboxList[lightboxIndex];
+  if(!item) return;
+  const content = document.getElementById('lightboxContent');
+  if(!item.src){
+    content.innerHTML = `<div style="background:var(--ink-1); height:50vh; display:flex; align-items:center; justify-content:center; border-radius:14px; color:var(--text-low); font-size:3rem;">${catIcons[item.cat]||'🖼️'}</div>`;
+    return;
+  }
+  if(item.type==='youtube'){
+    content.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId(item.src)}" frameborder="0" allowfullscreen style="aspect-ratio:16/9; height:auto;"></iframe>`;
+  }else{
+    content.innerHTML = `<img src="${item.src}" alt="${item.title||''}">`;
+  }
+}
+function navLightbox(dir){
+  lightboxIndex = (lightboxIndex + dir + lightboxList.length) % lightboxList.length;
+  showLightboxItem();
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+document.getElementById('lightbox').addEventListener('click', (e)=>{ if(e.target.id==='lightbox') closeLightbox(); });
+
+/* ============================================
+   RENDER TESTIMONIALS
+   ============================================ */
+function renderTestimonials(){
+  const grid = document.getElementById('testGrid');
+  if(REVIEWS.length===0){
+    grid.innerHTML = `<div class="pf-empty-state" style="grid-column:1/-1;">لسه مفيش تقييمات. الفريق هيضيفها قريب.</div>`;
+    return;
+  }
+  grid.innerHTML = REVIEWS.map(r=>`
+    <div class="test-card">
+      <div class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+      <p class="test-text">"${escapeHtml(r.text)}"</p>
+      <div class="test-author">
+        <div class="test-avatar">${(r.name||'?').trim().charAt(0)}</div>
+        <div><div class="test-name">${escapeHtml(r.name)}</div><div class="test-role">${escapeHtml(r.role||'')}</div></div>
+      </div>
+    </div>
+  `).join('');
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================
+   CHATBOT
+   ============================================ */
+let chatOpened = false;
+/* ============================================
+   CHAT LAUNCHER — DRAGGABLE
+   ============================================ */
+const chatLauncher = document.getElementById('chatLauncher');
+const CHAT_POS_KEY = 'creatix_chat_launcher_pos';
+
+function clampPos(x, y){
+  const size = chatLauncher.offsetWidth || 60;
+  const margin = 8;
+  const maxX = window.innerWidth - size - margin;
+  const maxY = window.innerHeight - size - margin;
+  return { x: Math.min(Math.max(x, margin), Math.max(maxX, margin)),
+           y: Math.min(Math.max(y, margin), Math.max(maxY, margin)) };
+}
+function setLauncherPos(x, y, save){
+  const c = clampPos(x, y);
+  chatLauncher.style.left = c.x + 'px';
+  chatLauncher.style.top = c.y + 'px';
+  if(save){
+    try{ localStorage.setItem(CHAT_POS_KEY, JSON.stringify(c)); }catch(e){}
+  }
+  return c;
+}
+function repositionChatWindow(){
+  const rect = chatLauncher.getBoundingClientRect();
+  const win = document.getElementById('chatWindow');
+  const winW = Math.min(360, window.innerWidth * 0.9);
+  const winH = Math.min(520, window.innerHeight * 0.75);
+  let left = rect.left;
+  let top = rect.top - winH - 14;
+  if(top < 10){ top = rect.bottom + 14; }
+  if(left + winW > window.innerWidth - 10){ left = window.innerWidth - winW - 10; }
+  if(left < 10){ left = 10; }
+  win.style.left = left + 'px';
+  win.style.top = top + 'px';
+}
+
+// restore saved position, or default to bottom-left
+(function initLauncherPos(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(CHAT_POS_KEY) || 'null'); }catch(e){}
+  if(saved && typeof saved.x === 'number' && typeof saved.y === 'number'){
+    setLauncherPos(saved.x, saved.y, false);
+  }else{
+    setLauncherPos(26, window.innerHeight - 86, false);
+  }
+})();
+window.addEventListener('resize', ()=>{
+  const rect = chatLauncher.getBoundingClientRect();
+  setLauncherPos(rect.left, rect.top, false);
+});
+
+let dragState = null; // {startX, startY, originX, originY, moved}
+let justDragged = false; // prevents the click event right after a drag from opening the chat
+const DRAG_THRESHOLD = 6; // px before a press counts as a drag, not a click
+
+function dragStart(clientX, clientY){
+  const rect = chatLauncher.getBoundingClientRect();
+  dragState = { startX:clientX, startY:clientY, originX:rect.left, originY:rect.top, moved:false };
+  chatLauncher.classList.add('dragging');
+}
+function dragMove(clientX, clientY){
+  if(!dragState) return;
+  const dx = clientX - dragState.startX;
+  const dy = clientY - dragState.startY;
+  if(!dragState.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD){
+    dragState.moved = true;
+  }
+  if(dragState.moved){
+    setLauncherPos(dragState.originX + dx, dragState.originY + dy, false);
+  }
+}
+function dragEnd(){
+  if(!dragState) return;
+  if(dragState.moved){
+    const rect = chatLauncher.getBoundingClientRect();
+    setLauncherPos(rect.left, rect.top, true); // persist final position
+    justDragged = true;
+    setTimeout(()=>{ justDragged = false; }, 50);
+  }
+  chatLauncher.classList.remove('dragging');
+  dragState = null;
+}
+
+// Mouse events
+chatLauncher.addEventListener('mousedown', e=>{
+  e.preventDefault();
+  dragStart(e.clientX, e.clientY);
+});
+window.addEventListener('mousemove', e=>{
+  if(dragState) dragMove(e.clientX, e.clientY);
+});
+window.addEventListener('mouseup', ()=>{
+  if(dragState) dragEnd();
+});
+
+// Touch events (tablets / phones)
+chatLauncher.addEventListener('touchstart', e=>{
+  const t = e.touches[0];
+  dragStart(t.clientX, t.clientY);
+}, {passive:true});
+window.addEventListener('touchmove', e=>{
+  if(dragState){
+    const t = e.touches[0];
+    dragMove(t.clientX, t.clientY);
+  }
+}, {passive:true});
+window.addEventListener('touchend', ()=>{
+  if(dragState) dragEnd();
+});
+
+// Click handler: only opens chat if it wasn't a drag
+chatLauncher.addEventListener('click', (e)=>{
+  if(justDragged){
+    e.preventDefault();
+    return;
+  }
+  repositionChatWindow();
+  toggleChat();
+});
+function toggleChat(force){
+  const win = document.getElementById('chatWindow');
+  const show = force !== undefined ? force : !win.classList.contains('show');
+  win.classList.toggle('show', show);
+  if(show && !chatOpened){
+    chatOpened = true;
+    document.getElementById('chatBadge').style.display = 'none';
+    addBotMsg(BOT_TEXTS.welcome);
+  }
+}
+function addBotMsg(text){
+  const body = document.getElementById('chatBody');
+  const el = document.createElement('div');
+  el.className = 'msg bot';
+  el.textContent = text;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+function addUserMsg(text){
+  const body = document.getElementById('chatBody');
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.textContent = text;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+function showTyping(){
+  const body = document.getElementById('chatBody');
+  const el = document.createElement('div');
+  el.className = 'msg bot typing-wrap';
+  el.id = 'typingIndicator';
+  el.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+function hideTyping(){
+  const t = document.getElementById('typingIndicator');
+  if(t) t.remove();
+}
+function botQuick(key){
+  const map = {services:'الخدمات', price:'الأسعار', time:'مدة التسليم', contact:'تواصل'};
+  addUserMsg(map[key]);
+  showTyping();
+  setTimeout(()=>{
+    hideTyping();
+    addBotMsg(BOT_TEXTS[key] || BOT_TEXTS.services);
+  }, 700);
+}
+function sendChat(){
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if(!val) return;
+  addUserMsg(val);
+  input.value = '';
+  showTyping();
+  setTimeout(()=>{
+    hideTyping();
+    addBotMsg(matchBotReply(val));
+  }, 800);
+}
+function matchBotReply(msg){
+  const m = msg.toLowerCase();
+  if(/خدم|تصميم|جرافيك|فيديو|موقع/.test(m)) return BOT_TEXTS.services;
+  if(/سعر|تكلفة|فلوس|كام/.test(m)) return BOT_TEXTS.price;
+  if(/وقت|مدة|تسليم|متى/.test(m)) return BOT_TEXTS.time;
+  if(/تواصل|واتس|رقم|ايميل/.test(m)) return BOT_TEXTS.contact;
+  return 'شكرًا لرسالتك! 🙏 لو عايز تعرف أكتر عن خدماتنا أو أسعارنا، اختار من الأزرار اللي فوق، أو كلم فريقنا مباشرة على واتساب.';
+}
+
+/* ============================================
+   ADMIN AUTH
+   ============================================ */
+function resetLights(containerId){
+  const lights = document.querySelectorAll('#'+containerId+' .light');
+  lights.forEach(l=> l.classList.remove('red','green'));
+}
+function advanceLight(containerId, color){
+  const lights = [...document.querySelectorAll('#'+containerId+' .light')];
+  const next = lights.find(l=> !l.classList.contains('red') && !l.classList.contains('green'));
+  if(next){
+    next.classList.add(color);
+  }else{
+    // all lights already used (3rd wrong attempt) — reset then light the first one
+    resetLights(containerId);
+    lights[0].classList.add(color);
+  }
+}
+function lightUpAll(containerId, color){
+  resetLights(containerId);
+  document.querySelectorAll('#'+containerId+' .light').forEach(l=> l.classList.add(color));
+}
+
+function togglePasswordVisibility(inputId, btnId){
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if(!input || !btn) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁️';
+  btn.setAttribute('aria-label', isHidden ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+}
+
+const ADMIN_CREDENTIALS = [
+  { email:'creatixstudio1.team', pass:'crea2026' }
+];
+const ADMIN_REMEMBER_KEY = 'creatix_admin_remembered';
+function isAdminRemembered(){
+  return localStorage.getItem(ADMIN_REMEMBER_KEY) === 'true';
+}
+
+function openAdminLogin(){
+  // If already authenticated on this device, skip straight to the dashboard
+  if(isAdminRemembered()){
+    openDashboard();
+    return;
+  }
+  document.getElementById('loginModal').classList.add('show');
+  resetLights('adminLights');
+}
+function closeAdminLogin(){
+  document.getElementById('loginModal').classList.remove('show');
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('adminEmail').value = '';
+  document.getElementById('adminPass').value = '';
+  resetLights('adminLights');
+}
+function tryLogin(){
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const ok = ADMIN_CREDENTIALS.some(acc => email === acc.email && pass === acc.pass);
+  if(ok){
+    lightUpAll('adminLights', 'green');
+    localStorage.setItem(ADMIN_REMEMBER_KEY, 'true');
+    setTimeout(()=>{
+      closeAdminLogin();
+      openDashboard();
+    }, 450);
+  }else{
+    advanceLight('adminLights', 'red');
+    document.getElementById('loginError').textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+  }
+}
+function openDashboard(){
+  document.getElementById('dashOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  renderWorksAdmin();
+  renderReviewsAdmin();
+  loadBotForm();
+}
+function goHome(){
+  document.getElementById('dashOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function logoutAdmin(){
+  document.getElementById('dashOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  localStorage.removeItem(ADMIN_REMEMBER_KEY);
+  localStorage.removeItem(DESIGNER_LS.remembered);
+}
+function switchTab(tab){
+  document.querySelectorAll('.dash-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.dash-panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+tab));
+}
+
+/* ============================================
+   ADMIN — WORKS MANAGEMENT
+   ============================================ */
+let addCategory = 'social';
+document.getElementById('addCatPills').addEventListener('click', e=>{
+  if(!e.target.classList.contains('cat-pill')) return;
+  document.querySelectorAll('#addCatPills .cat-pill').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  addCategory = e.target.dataset.cat;
+});
+
+function addByUrl(){
+  const url = document.getElementById('imgUrlInput').value.trim();
+  if(!url){ showToast('⚠️ من فضلك حط رابط صورة الأول'); return; }
+  WORKS.unshift({id:Date.now()+Math.random(), cat:addCategory, title:document.getElementById('workTitleInput').value.trim(), type:'image', src:url});
+  document.getElementById('imgUrlInput').value = '';
+  document.getElementById('workTitleInput').value = '';
+  renderWorksAdmin();
+  renderPortfolio();
+  showToast('✅ تم إضافة الصورة');
+}
+
+function renderWorksAdmin(){
+  const list = document.getElementById('worksList');
+  document.getElementById('worksCount').textContent = WORKS.length;
+  if(WORKS.length===0){
+    list.innerHTML = '<div class="empty-row">لسه مفيش أعمال مضافة</div>';
+    return;
+  }
+  list.innerHTML = WORKS.map(w=>{
+    const thumb = w.src
+      ? `<img src="${w.src}" onerror="this.outerHTML='<div class=\\'thumb-ph\\'>${catIcons[w.cat]||'🖼️'}</div>'">`
+      : `<div class="thumb-ph">${catIcons[w.cat]||'🖼️'}</div>`;
+    return `<div class="item-row">
+      ${thumb}
+      <div class="meta"><div class="t">${escapeHtml(w.title)||'(بدون عنوان)'}</div><div class="c">${catLabels[w.cat]||w.cat}</div></div>
+      <button class="del" onclick="deleteWork('${w.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function deleteWork(id){
+  WORKS = WORKS.filter(w=> String(w.id) !== String(id));
+  renderWorksAdmin();
+  renderPortfolio();
+}
+function saveWorks(){
+  saveData(LS_KEYS.works, WORKS);
+  showToast('💾 تم حفظ الأعمال بنجاح');
+}
+
+/* ============================================
+   ADMIN — REVIEWS MANAGEMENT
+   ============================================ */
+function addReview(){
+  const name = document.getElementById('revName').value.trim();
+  const role = document.getElementById('revRole').value.trim();
+  const stars = parseInt(document.getElementById('revStars').value, 10);
+  const text = document.getElementById('revText').value.trim();
+  if(!name || !text){ showToast('⚠️ من فضلك اكتب اسم العميل ونص التقييم'); return; }
+  REVIEWS.unshift({id:Date.now(), name, role, stars, text});
+  document.getElementById('revName').value = '';
+  document.getElementById('revRole').value = '';
+  document.getElementById('revText').value = '';
+  renderReviewsAdmin();
+  renderTestimonials();
+  showToast('✅ تم إضافة التقييم');
+}
+function renderReviewsAdmin(){
+  const list = document.getElementById('reviewsList');
+  if(REVIEWS.length===0){
+    list.innerHTML = '<div class="empty-row">لسه مفيش تقييمات</div>';
+    return;
+  }
+  list.innerHTML = REVIEWS.map(r=>`
+    <div class="item-row">
+      <div class="thumb-ph">${(r.name||'?').trim().charAt(0)}</div>
+      <div class="meta"><div class="t">${escapeHtml(r.name)} — ${'★'.repeat(r.stars)}</div><div class="c">${escapeHtml(r.text.slice(0,60))}${r.text.length>60?'...':''}</div></div>
+      <button class="del" onclick="deleteReview(${r.id})">🗑️</button>
+    </div>
+  `).join('');
+}
+function deleteReview(id){
+  REVIEWS = REVIEWS.filter(r=> r.id !== id);
+  renderReviewsAdmin();
+  renderTestimonials();
+}
+function saveReviews(){
+  saveData(LS_KEYS.reviews, REVIEWS);
+  showToast('💾 تم حفظ التقييمات بنجاح');
+}
+
+/* ============================================
+   ADMIN — BOT TEXTS
+   ============================================ */
+function loadBotForm(){
+  document.getElementById('botWelcome').value = BOT_TEXTS.welcome;
+  document.getElementById('botServices').value = BOT_TEXTS.services;
+  document.getElementById('botPrice').value = BOT_TEXTS.price;
+  document.getElementById('botTime').value = BOT_TEXTS.time;
+  document.getElementById('botContact').value = BOT_TEXTS.contact;
+}
+function saveBotTexts(){
+  BOT_TEXTS = {
+    welcome: document.getElementById('botWelcome').value.trim() || DEFAULT_BOT.welcome,
+    services: document.getElementById('botServices').value.trim() || DEFAULT_BOT.services,
+    price: document.getElementById('botPrice').value.trim() || DEFAULT_BOT.price,
+    time: document.getElementById('botTime').value.trim() || DEFAULT_BOT.time,
+    contact: document.getElementById('botContact').value.trim() || DEFAULT_BOT.contact,
+  };
+  saveData(LS_KEYS.bot, BOT_TEXTS);
+  showToast('💾 تم حفظ نصوص البوت بنجاح');
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 3200);
+}
+
+/* ============================================
+   INIT
+   ============================================ */
+renderPortfolio();
+renderTestimonials();
+
+/* ============================================
+   DESIGNER UPLOAD ACCESS
+   ============================================ */
+const DESIGNER_CREDENTIALS = [
+  { email:'obaida@design.com', pass:'Design4@ver' },
+  { email:'amrezo134@design.com', pass:'Design4@ver' }
+];
+const DESIGNER_LS = {
+  attempts: 'creatix_designer_attempts',
+  hidden: 'creatix_designer_hidden',
+  remembered: 'creatix_designer_remembered'
+};
+const MAX_DESIGNER_ATTEMPTS = 3;
+
+function getDesignerAttempts(){
+  return parseInt(localStorage.getItem(DESIGNER_LS.attempts) || '0', 10);
+}
+function setDesignerAttempts(n){
+  localStorage.setItem(DESIGNER_LS.attempts, String(n));
+}
+function isDesignerButtonHidden(){
+  return localStorage.getItem(DESIGNER_LS.hidden) === 'true';
+}
+function isDesignerRemembered(){
+  return localStorage.getItem(DESIGNER_LS.remembered) === 'true';
+}
+
+function initDesignerButtonState(){
+  const btn = document.getElementById('navDesignerBtn');
+  if(!btn) return;
+  if(isDesignerButtonHidden()){
+    btn.classList.add('hidden');
+  }
+}
+initDesignerButtonState();
+
+function openDesignerLogin(){
+  if(isDesignerButtonHidden()) return; // safety: locked out entirely
+  // If already remembered/authenticated on this device, skip straight to the page
+  if(isDesignerRemembered() || isAdminRemembered()){
+    openDashboard();
+    return;
+  }
+  document.getElementById('designerLoginModal').classList.add('show');
+  syncDesignerLights();
+}
+function closeDesignerLogin(){
+  document.getElementById('designerLoginModal').classList.remove('show');
+  document.getElementById('designerLoginError').textContent = '';
+  document.getElementById('designerEmail').value = '';
+  document.getElementById('designerPass').value = '';
+}
+function syncDesignerLights(){
+  resetLights('designerLights');
+  const lights = [...document.querySelectorAll('#designerLights .light')];
+  const attempts = getDesignerAttempts();
+  for(let i=0; i<attempts && i<lights.length; i++){
+    lights[i].classList.add('red');
+  }
+}
+function tryDesignerLogin(){
+  const email = document.getElementById('designerEmail').value.trim();
+  const pass = document.getElementById('designerPass').value;
+
+  if(DESIGNER_CREDENTIALS.some(acc => email === acc.email && pass === acc.pass)){
+    // success: reset attempts, remember the device permanently
+    lightUpAll('designerLights', 'green');
+    setDesignerAttempts(0);
+    localStorage.setItem(DESIGNER_LS.remembered, 'true');
+    localStorage.setItem(ADMIN_REMEMBER_KEY, 'true');
+    setTimeout(()=>{
+      closeDesignerLogin();
+      openDashboard();
+    }, 450);
+    return;
+  }
+
+  // failed attempt
+  const attempts = getDesignerAttempts() + 1;
+  setDesignerAttempts(attempts);
+  const remaining = MAX_DESIGNER_ATTEMPTS - attempts;
+  advanceLight('designerLights', 'red');
+
+  if(remaining <= 0){
+    localStorage.setItem(DESIGNER_LS.hidden, 'true');
+    setTimeout(()=>{
+      closeDesignerLogin();
+      const btn = document.getElementById('navDesignerBtn');
+      if(btn) btn.classList.add('hidden');
+      showToast('🔒 تم إخفاء زر الإضافة بعد 3 محاولات خاطئة');
+    }, 450);
+  }else{
+    document.getElementById('designerLoginError').textContent =
+      `البريد الإلكتروني أو كلمة المرور غير صحيحة — متبقي لك ${remaining} ${remaining===1?'محاولة':'محاولات'}`;
+  }
+}
+/* ============================================
+   COMMENTS — AUTH & UI FUNCTIONS
+   ============================================ */
+
+/* -- Auth Modal -- */
+let __authMode = 'login';
+
+function openAuthModal(){
+  document.getElementById('authModal').classList.add('show');
+  document.getElementById('authError').textContent = '';
+  switchAuthTab('login');
+}
+function closeAuthModal(){
+  document.getElementById('authModal').classList.remove('show');
+  document.getElementById('authError').textContent = '';
+}
+function switchAuthTab(mode){
+  __authMode = mode;
+  document.getElementById('loginTab').classList.toggle('active', mode==='login');
+  document.getElementById('registerTab').classList.toggle('active', mode==='register');
+  document.getElementById('authLoginForm').style.display = mode==='login' ? '' : 'none';
+  document.getElementById('authRegisterForm').style.display = mode==='register' ? '' : 'none';
+  document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'دخول 🔐' : 'إنشاء حساب ✨';
+  document.getElementById('authError').textContent = '';
+}
+
+async function submitAuth(){
+  const FB = window.__FB;
+  if(!FB){ showToast('⚠️ Firebase غير متصل'); return; }
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+
+  try{
+    if(__authMode === 'login'){
+      const email = document.getElementById('authEmail').value.trim();
+      const pass  = document.getElementById('authPass').value;
+      if(!email || !pass){ errEl.textContent = 'ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
+      await FB.signInWithEmailAndPassword(FB.auth, email, pass);
+      closeAuthModal();
+      showToast('✅ تم تسجيل الدخول!');
+    } else {
+      const name  = document.getElementById('authName').value.trim();
+      const email = document.getElementById('authEmailReg').value.trim();
+      const pass  = document.getElementById('authPassReg').value;
+      if(!name){ errEl.textContent = 'ادخل اسمك الظاهر'; btn.disabled=false; return; }
+      if(!email || !pass){ errEl.textContent = 'ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
+      if(pass.length < 8){ errEl.textContent = 'كلمة المرور 8 أحرف على الأقل'; btn.disabled=false; return; }
+      const cred = await FB.createUserWithEmailAndPassword(FB.auth, email, pass);
+      await FB.updateProfile(cred.user, { displayName: name });
+      window.__currentUser = cred.user;
+      closeAuthModal();
+      showToast('✅ تم إنشاء حسابك!');
+    }
+  } catch(e){
+    const msgs = {
+      'auth/email-already-in-use':    'الإيميل ده مستخدم بالفعل',
+      'auth/invalid-email':            'إيميل غير صحيح',
+      'auth/wrong-password':           'كلمة المرور غلط',
+      'auth/user-not-found':           'مفيش حساب بالإيميل ده',
+      'auth/weak-password':            'كلمة المرور ضعيفة جداً',
+      'auth/too-many-requests':        'محاولات كتير، حاول بعدين',
+      'auth/network-request-failed':   'تأكد من الاتصال بالإنترنت'
+    };
+    errEl.textContent = msgs[e.code] || 'حصل خطأ، حاول تاني';
+  } finally { btn.disabled = false; }
+}
+
+async function signInGoogle(){
+  const FB = window.__FB;
+  if(!FB){ showToast('⚠️ Firebase غير متصل'); return; }
+  try{
+    await FB.signInWithPopup(FB.auth, FB.gProvider);
+    showToast('✅ تم تسجيل الدخول بـ Google!');
+  } catch(e){
+    if(e.code !== 'auth/popup-closed-by-user')
+      showToast('⚠️ مشكلة في تسجيل الدخول');
+  }
+}
+
+async function signOutUser(){
+  const FB = window.__FB;
+  if(!FB) return;
+  await FB.signOut(FB.auth);
+  showToast('👋 تم تسجيل الخروج');
+}
+
+/* -- Render Auth Bar + Form -- */
+function renderCommentAuthUI(){
+  const user = window.__currentUser;
+  const bar  = document.getElementById('commentsAuthBar');
+  const form = document.getElementById('commentForm');
+  if(!bar) return;
+
+  if(user){
+    const avatarHtml = user.photoURL
+      ? `<div class="avatar"><img src="${user.photoURL}" alt="avatar" referrerpolicy="no-referrer"></div>`
+      : `<div class="avatar">👤</div>`;
+    bar.innerHTML = `
+      <div class="user-info">
+        ${avatarHtml}
+        <div>
+          <div class="user-name">${user.displayName || 'مستخدم'}</div>
+          <div class="user-email">${user.email || ''}</div>
+        </div>
+      </div>
+      <button class="btn-signout" onclick="signOutUser()">تسجيل الخروج ⏏</button>`;
+    if(form) form.style.display = '';
+  } else {
+    bar.innerHTML = `
+      <span style="color:var(--text-mid); font-size:0.92rem;">سجّل دخولك عشان تكتب تعليق</span>
+      <div class="auth-btns">
+        <button class="btn-google" onclick="signInGoogle()">
+          <svg viewBox="0 0 48 48" style="width:18px;height:18px;"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.2l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.3C9.7 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C43.1 35.2 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+          دخول بـ Google
+        </button>
+        <button class="btn-email-login" onclick="openAuthModal()">✉️ دخول بالإيميل</button>
+      </div>`;
+    if(form) form.style.display = 'none';
+  }
+}
+
+/* -- Char counter -- */
+function updateCharCount(){
+  const ta = document.getElementById('commentText');
+  const el = document.getElementById('charCount');
+  if(!ta || !el) return;
+  const len = ta.value.length;
+  el.textContent = len + ' / 500';
+  el.className = 'char-count' + (len > 480 ? ' error' : len > 400 ? ' warn' : '');
+}
+
+/* -- Render comments list -- */
+function renderComments(list){
+  const el = document.getElementById('commentsList');
+  if(!el) return;
+  if(!list || list.length === 0){
+    el.innerHTML = `<div class="comments-empty"><div class="ic">💬</div><p>لا يوجد تعليقات حتى الآن — كن أول من يكتب!</p></div>`;
+    return;
+  }
+  const user = window.__currentUser;
+  const isAdm = user && (user.email === 'creatixstudio1.team');
+  el.innerHTML = list.map(c => {
+    const avatarHtml = c.avatar
+      ? `<div class="comment-avatar"><img src="${c.avatar}" alt="" referrerpolicy="no-referrer"></div>`
+      : `<div class="comment-avatar">👤</div>`;
+    const canDel = isAdm || (user && user.uid === c.uid);
+    const delBtn = canDel
+      ? `<button class="comment-del" onclick="window.__deleteComment && window.__deleteComment('${c.id}')" title="حذف">🗑</button>` : '';
+    const date = c.ts ? new Date(c.ts).toLocaleDateString('ar-EG', {year:'numeric',month:'short',day:'numeric'}) : '';
+    return `<div class="comment-card">
+      ${delBtn}
+      <div class="comment-card-head">
+        ${avatarHtml}
+        <div class="comment-meta">
+          <div class="comment-name">${escHtml(c.name || 'مستخدم')}</div>
+          <div class="comment-date">${date}</div>
+        </div>
+      </div>
+      <div class="comment-body">${escHtml(c.text || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* -- Admin comments render -- */
+function renderAdminComments(list){
+  const el    = document.getElementById('adminCommentsList');
+  const count = document.getElementById('adminCommentsCount');
+  if(!el) return;
+  if(count) count.textContent = list ? list.length : 0;
+  if(!list || list.length === 0){
+    el.innerHTML = '<p style="color:var(--text-low); font-size:0.9rem;">لا يوجد تعليقات.</p>';
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const date = c.ts ? new Date(c.ts).toLocaleDateString('ar-EG', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="item-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+      <div style="display:flex; justify-content:space-between; width:100%; align-items:center; gap:10px;">
+        <div>
+          <span style="font-weight:700; color:var(--lilac-2);">${escHtml(c.name||'مستخدم')}</span>
+          <span style="font-size:0.78rem; color:var(--text-low); margin-right:10px;">${date}</span>
+        </div>
+        <button class="del-btn" onclick="window.__deleteComment && window.__deleteComment('${c.id}')">🗑 حذف</button>
+      </div>
+      <p style="color:var(--text-mid); font-size:0.88rem;">${escHtml(c.text||'')}</p>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* -- Init auth UI on load (Firebase module fires onAuthStateChanged, but set initial state) -- */
+window.__currentUser = null;
+renderCommentAuthUI();
+
+</script>
+</body>
+</html>
