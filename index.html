@@ -54,22 +54,29 @@ onAuthStateChanged(auth, user => {
   renderCommentAuthUI();
 });
 
-/* ---- Load comments on page load (always, for all visitors) ---- */
+/* ---- Load comments (real-time listener, runs once) ---- */
+let __commentsListenerActive = false;
 function loadComments(){
+  if(__commentsListenerActive) return;
+  __commentsListenerActive = true;
   const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
   onValue(commentsRef, snap => {
     const all = [];
     snap.forEach(child => all.push({ id: child.key, ...child.val() }));
     renderComments(all.reverse());
   }, err => {
-    console.error('Comments load error:', err);
+    console.error('Comments load error:', err.code, err.message);
     const el = document.getElementById('commentsList');
-    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات، حاول تحديث الصفحة.</p></div>';
+    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات، تأكد من إعدادات Firebase Rules.</p></div>';
   });
 }
 
-// Start loading immediately
-loadComments();
+// Wait for DOM then start listener
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', loadComments);
+} else {
+  loadComments();
+}
 
 window.__loadComments = loadComments;
 window.__deleteComment = function(id){
@@ -2380,14 +2387,19 @@ function renderComments(list){
     const canDel = isAdm || (user && user.uid === c.uid);
     const delBtn = canDel
       ? `<button class="comment-del" onclick="window.__deleteComment && window.__deleteComment('${c.id}')" title="حذف">🗑</button>` : '';
-    const date = c.ts ? new Date(c.ts).toLocaleDateString('ar-EG', {year:'numeric',month:'short',day:'numeric'}) : '';
+    // Handle timestamp: Firebase serverTimestamp returns number (ms), object, or null
+    let date = '';
+    if(c.ts){
+      const ms = typeof c.ts === 'object' ? c.ts['.sv'] ? Date.now() : null : Number(c.ts);
+      if(ms) date = new Date(ms).toLocaleDateString('ar-EG', {year:'numeric', month:'short', day:'numeric'});
+    }
     return `<div class="comment-card">
       ${delBtn}
       <div class="comment-card-head">
         ${avatarHtml}
         <div class="comment-meta">
           <div class="comment-name">${escHtml(c.name || 'مستخدم')}</div>
-          <div class="comment-date">${date}</div>
+          ${date ? `<div class="comment-date">${date}</div>` : ''}
         </div>
       </div>
       <div class="comment-body">${escHtml(c.text || '')}</div>
