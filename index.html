@@ -16,9 +16,6 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-/* ============================================================
-   FIREBASE CONFIG — استبدل القيم دي ببياناتك من Firebase Console
-   ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
@@ -37,92 +34,147 @@ const firebaseConfig = {
   measurementId:     "G-8013034X8Q"
 };
 
-const app      = initializeApp(firebaseConfig);
-const auth     = getAuth(app);
-const db       = getDatabase(app);
+const app       = initializeApp(firebaseConfig);
+const auth      = getAuth(app);
+const db        = getDatabase(app);
 const gProvider = new GoogleAuthProvider();
 
-/* ---- expose to global scope ---- */
+/* ---- expose FB helpers ---- */
 window.__FB = { auth, db, ref, push, onValue, remove, serverTimestamp, query,
                 orderByChild, signInWithEmailAndPassword, createUserWithEmailAndPassword,
                 signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider,
                 gProvider, updateProfile };
 
-/* ---- Auth state listener ---- */
+/* ---- Auth listener ---- */
 onAuthStateChanged(auth, user => {
   window.__currentUser = user || null;
-  renderCommentAuthUI();
+  if(typeof window.renderCommentAuthUI === 'function') window.renderCommentAuthUI();
+  if(typeof window.renderProfileCard    === 'function') window.renderProfileCard();
 });
 
-/* ---- Load comments (real-time, runs once after DOM ready) ---- */
-let __commentsListenerActive = false;
-function loadComments(){
-  if(__commentsListenerActive) return;
-  __commentsListenerActive = true;
-  const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
-  onValue(commentsRef, snap => {
+/* ---- Real-time comments listener (starts once) ---- */
+let __listenerOn = false;
+function startCommentsListener(){
+  if(__listenerOn) return;
+  __listenerOn = true;
+  const q = query(ref(db,'comments'), orderByChild('ts'));
+  onValue(q, snap => {
     const all = [];
-    snap.forEach(child => all.push({ id: child.key, ...child.val() }));
-    if(typeof window.renderComments === 'function'){
-      window.renderComments(all.reverse());
-    }
-  }, err => {
+    snap.forEach(c => all.push({ id: c.key, ...c.val() }));
+    if(typeof window.renderComments === 'function') window.renderComments(all.reverse());
+  }, () => {
     const el = document.getElementById('commentsList');
     if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات.</p></div>';
   });
 }
 
-document.addEventListener('DOMContentLoaded', loadComments);
-
-window.__loadComments = loadComments;
-window.__deleteComment = function(id){
-  remove(ref(db,'comments/'+id))
-    .then(()=> showToast('🗑️ تم حذف التعليق'))
-    .catch(()=> showToast('⚠️ مشكلة في الحذف'));
-};
-
+/* ---- Submit comment ---- */
 window.__submitComment = async function(){
   const user = window.__currentUser;
   if(!user){ showToast('⚠️ سجّل دخولك الأول'); return; }
-  const textarea = document.getElementById('commentText');
-  const text = (textarea.value || '').trim();
+  const textarea  = document.getElementById('commentText');
+  const text      = (textarea.value || '').trim();
   if(!text){ showToast('⚠️ اكتب تعليقك الأول'); return; }
   if(text.length > 500){ showToast('⚠️ التعليق طويل جداً (أقصى 500 حرف)'); return; }
-
-  const submitBtn = document.getElementById('commentSubmitBtn');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'جاري الإرسال...';
-
+  const btn = document.getElementById('commentSubmitBtn');
+  btn.disabled = true; btn.textContent = 'جاري الإرسال...';
   try{
     await push(ref(db,'comments'), {
-      text,
-      uid:      user.uid,
-      name:     user.displayName || 'مستخدم',
-      avatar:   user.photoURL    || '',
-      ts:       serverTimestamp()
+      text, uid: user.uid,
+      name:   user.displayName || 'مستخدم',
+      avatar: user.photoURL    || '',
+      ts:     serverTimestamp()
     });
     textarea.value = '';
-    updateCharCount();
+    if(typeof updateCharCount === 'function') updateCharCount();
     showToast('✅ تم نشر تعليقك!');
-  }catch(e){
+  } catch(e){
     showToast('⚠️ حصل خطأ، حاول تاني');
-  }finally{
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'نشر التعليق 💬';
+  } finally{
+    btn.disabled = false; btn.textContent = 'نشر التعليق 💬';
   }
 };
 
-/* ---- Admin: load comments to dashboard ---- */
+/* ---- Delete comment ---- */
+window.__deleteComment = function(id){
+  remove(ref(db,'comments/'+id))
+    .then(()  => showToast('🗑️ تم حذف التعليق'))
+    .catch(()  => showToast('⚠️ مشكلة في الحذف'));
+};
+
+/* ---- Admin comments listener ---- */
 window.__loadAdminComments = function(){
-  const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
-  onValue(commentsRef, snap => {
+  const q = query(ref(db,'comments'), orderByChild('ts'));
+  onValue(q, snap => {
     const all = [];
-    snap.forEach(child => all.push({ id: child.key, ...child.val() }));
-    if(typeof window.renderAdminComments === 'function'){
-      window.renderAdminComments(all.reverse());
-    }
+    snap.forEach(c => all.push({ id: c.key, ...c.val() }));
+    if(typeof window.renderAdminComments === 'function') window.renderAdminComments(all.reverse());
   });
 };
+
+/* ---- Sign in with Google ---- */
+window.signInGoogle = async function(){
+  try{
+    await signInWithPopup(auth, gProvider);
+    showToast('✅ تم تسجيل الدخول بـ Google!');
+  } catch(e){
+    if(e.code !== 'auth/popup-closed-by-user') showToast('⚠️ مشكلة في تسجيل الدخول');
+  }
+};
+
+/* ---- Sign in with email ---- */
+window.submitAuth = async function(){
+  const mode  = window.__authMode || 'login';
+  const btn   = document.getElementById('authSubmitBtn');
+  const errEl = document.getElementById('authError');
+  btn.disabled = true; errEl.textContent = '';
+  try{
+    if(mode === 'login'){
+      const email = document.getElementById('authEmail').value.trim();
+      const pass  = document.getElementById('authPass').value;
+      if(!email||!pass){ errEl.textContent='ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
+      await signInWithEmailAndPassword(auth, email, pass);
+      if(typeof closeAuthModal==='function') closeAuthModal();
+      showToast('✅ تم تسجيل الدخول!');
+    } else {
+      const name  = document.getElementById('authName').value.trim();
+      const email = document.getElementById('authEmailReg').value.trim();
+      const pass  = document.getElementById('authPassReg').value;
+      if(!name){ errEl.textContent='ادخل اسمك'; btn.disabled=false; return; }
+      if(!email||!pass){ errEl.textContent='ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
+      if(pass.length<8){ errEl.textContent='كلمة المرور 8 أحرف على الأقل'; btn.disabled=false; return; }
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      window.__currentUser = cred.user;
+      if(typeof closeAuthModal==='function') closeAuthModal();
+      showToast('✅ تم إنشاء حسابك!');
+    }
+  } catch(e){
+    const msgs = {
+      'auth/email-already-in-use':  'الإيميل ده مستخدم بالفعل',
+      'auth/invalid-email':          'إيميل غير صحيح',
+      'auth/wrong-password':         'كلمة المرور غلط',
+      'auth/invalid-credential':     'الإيميل أو كلمة المرور غلط',
+      'auth/user-not-found':         'مفيش حساب بالإيميل ده',
+      'auth/weak-password':          'كلمة المرور ضعيفة جداً',
+      'auth/too-many-requests':      'محاولات كتير، حاول بعدين',
+    };
+    errEl.textContent = msgs[e.code] || 'حصل خطأ، حاول تاني';
+  } finally { btn.disabled = false; }
+};
+
+/* ---- Sign out ---- */
+window.signOutUser = async function(){
+  await signOut(auth);
+  showToast('👋 تم تسجيل الخروج');
+};
+
+/* ---- Start listener after DOM ready ---- */
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', startCommentsListener);
+} else {
+  startCommentsListener();
+}
 
 </script>
 
@@ -2275,68 +2327,6 @@ function switchAuthTab(mode){
   document.getElementById('authRegisterForm').style.display = mode==='register' ? '' : 'none';
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'دخول 🔐' : 'إنشاء حساب ✨';
   document.getElementById('authError').textContent = '';
-}
-
-async function submitAuth(){
-  const FB = window.__FB;
-  if(!FB){ showToast('⚠️ Firebase غير متصل'); return; }
-  const btn = document.getElementById('authSubmitBtn');
-  btn.disabled = true;
-  const errEl = document.getElementById('authError');
-  errEl.textContent = '';
-
-  try{
-    if(__authMode === 'login'){
-      const email = document.getElementById('authEmail').value.trim();
-      const pass  = document.getElementById('authPass').value;
-      if(!email || !pass){ errEl.textContent = 'ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
-      await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-      closeAuthModal();
-      showToast('✅ تم تسجيل الدخول!');
-    } else {
-      const name  = document.getElementById('authName').value.trim();
-      const email = document.getElementById('authEmailReg').value.trim();
-      const pass  = document.getElementById('authPassReg').value;
-      if(!name){ errEl.textContent = 'ادخل اسمك الظاهر'; btn.disabled=false; return; }
-      if(!email || !pass){ errEl.textContent = 'ادخل الإيميل وكلمة المرور'; btn.disabled=false; return; }
-      if(pass.length < 8){ errEl.textContent = 'كلمة المرور 8 أحرف على الأقل'; btn.disabled=false; return; }
-      const cred = await FB.createUserWithEmailAndPassword(FB.auth, email, pass);
-      await FB.updateProfile(cred.user, { displayName: name });
-      window.__currentUser = cred.user;
-      closeAuthModal();
-      showToast('✅ تم إنشاء حسابك!');
-    }
-  } catch(e){
-    const msgs = {
-      'auth/email-already-in-use':    'الإيميل ده مستخدم بالفعل',
-      'auth/invalid-email':            'إيميل غير صحيح',
-      'auth/wrong-password':           'كلمة المرور غلط',
-      'auth/user-not-found':           'مفيش حساب بالإيميل ده',
-      'auth/weak-password':            'كلمة المرور ضعيفة جداً',
-      'auth/too-many-requests':        'محاولات كتير، حاول بعدين',
-      'auth/network-request-failed':   'تأكد من الاتصال بالإنترنت'
-    };
-    errEl.textContent = msgs[e.code] || 'حصل خطأ، حاول تاني';
-  } finally { btn.disabled = false; }
-}
-
-async function signInGoogle(){
-  const FB = window.__FB;
-  if(!FB){ showToast('⚠️ Firebase غير متصل'); return; }
-  try{
-    await FB.signInWithPopup(FB.auth, FB.gProvider);
-    showToast('✅ تم تسجيل الدخول بـ Google!');
-  } catch(e){
-    if(e.code !== 'auth/popup-closed-by-user')
-      showToast('⚠️ مشكلة في تسجيل الدخول');
-  }
-}
-
-async function signOutUser(){
-  const FB = window.__FB;
-  if(!FB) return;
-  await FB.signOut(FB.auth);
-  showToast('👋 تم تسجيل الخروج');
 }
 
 /* -- Render Auth Bar + Form -- */
