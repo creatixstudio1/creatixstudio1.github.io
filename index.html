@@ -63,7 +63,9 @@ function loadComments(){
   onValue(commentsRef, snap => {
     const all = [];
     snap.forEach(child => all.push({ id: child.key, ...child.val() }));
-    renderComments(all.reverse());
+    if(typeof window.renderComments === 'function'){
+      window.renderComments(all.reverse());
+    }
   }, err => {
     const el = document.getElementById('commentsList');
     if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات.</p></div>';
@@ -116,7 +118,9 @@ window.__loadAdminComments = function(){
   onValue(commentsRef, snap => {
     const all = [];
     snap.forEach(child => all.push({ id: child.key, ...child.val() }));
-    renderAdminComments(all.reverse());
+    if(typeof window.renderAdminComments === 'function'){
+      window.renderAdminComments(all.reverse());
+    }
   });
 };
 
@@ -2365,7 +2369,7 @@ function updateCharCount(){
 }
 
 /* -- Render comments list -- */
-function renderComments(list){
+window.renderComments = function renderComments(list){
   const el = document.getElementById('commentsList');
   if(!el) return;
   if(!list || list.length === 0){
@@ -2402,7 +2406,7 @@ function renderComments(list){
 }
 
 /* -- Admin comments render -- */
-function renderAdminComments(list){
+window.renderAdminComments = function renderAdminComments(list){
   const el    = document.getElementById('adminCommentsList');
   const count = document.getElementById('adminCommentsCount');
   if(!el) return;
