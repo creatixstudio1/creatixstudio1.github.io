@@ -52,18 +52,24 @@ window.__FB = { auth, db, ref, push, onValue, remove, serverTimestamp, query,
 onAuthStateChanged(auth, user => {
   window.__currentUser = user || null;
   renderCommentAuthUI();
-  if(user) loadComments();
 });
 
-/* ---- Load & render comments (real-time) ---- */
+/* ---- Load comments on page load (always, for all visitors) ---- */
 function loadComments(){
   const commentsRef = query(ref(db,'comments'), orderByChild('ts'));
   onValue(commentsRef, snap => {
     const all = [];
     snap.forEach(child => all.push({ id: child.key, ...child.val() }));
     renderComments(all.reverse());
+  }, err => {
+    console.error('Comments load error:', err);
+    const el = document.getElementById('commentsList');
+    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات، حاول تحديث الصفحة.</p></div>';
   });
 }
+
+// Start loading immediately
+loadComments();
 
 window.__loadComments = loadComments;
 window.__deleteComment = function(id){
