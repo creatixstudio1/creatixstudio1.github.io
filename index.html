@@ -169,6 +169,27 @@ window.signOutUser = async function(){
   showToast('👋 تم تسجيل الخروج');
 };
 
+/* ---- Start listener after renderComments is ready ---- */
+let __listenerOn = false;
+function startCommentsListener(){
+  if(__listenerOn) return;
+  // Wait until renderComments is defined in global scope
+  if(typeof window.renderComments !== 'function'){
+    setTimeout(startCommentsListener, 50);
+    return;
+  }
+  __listenerOn = true;
+  const q = query(ref(db,'comments'), orderByChild('ts'));
+  onValue(q, snap => {
+    const all = [];
+    snap.forEach(c => all.push({ id: c.key, ...c.val() }));
+    window.renderComments(all.reverse());
+  }, () => {
+    const el = document.getElementById('commentsList');
+    if(el) el.innerHTML = '<div class="comments-empty"><div class="ic">⚠️</div><p>تعذّر تحميل التعليقات.</p></div>';
+  });
+}
+
 /* ---- Start listener after DOM ready ---- */
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', startCommentsListener);
