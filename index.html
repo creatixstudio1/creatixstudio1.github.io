@@ -216,6 +216,15 @@ if(document.readyState === 'loading'){
 
 *{box-sizing:border-box; margin:0; padding:0;}
 html{scroll-behavior:smooth;}
+html{scrollbar-width:thin; scrollbar-color:var(--violet-3) var(--ink-1);}
+::-webkit-scrollbar{width:12px; height:12px;}
+::-webkit-scrollbar-track{background:var(--ink-1);}
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg, var(--violet-3), var(--lilac-1));
+  border-radius:10px; border:3px solid var(--ink-1);
+}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg, var(--violet-4), var(--lilac-2));}
+::-webkit-scrollbar-corner{background:var(--ink-1);}
 body{
   background:var(--ink-0);
   color:var(--text-hi);
@@ -230,6 +239,34 @@ body{
 ::selection{background:var(--violet-4); color:#fff;}
 a{color:inherit; text-decoration:none;}
 button{font-family:inherit; cursor:pointer;}
+
+/* Scroll progress bar */
+.scroll-progress{
+  position:fixed; top:0; left:0; height:3px; width:0%; z-index:999;
+  background:linear-gradient(90deg, var(--violet-4), var(--lilac-1), var(--violet-4));
+  box-shadow:0 0 8px rgba(157,78,221,0.6);
+  transition:width .12s linear;
+}
+
+/* Back-to-top button */
+.back-to-top{
+  position:fixed; bottom:26px; right:26px; z-index:120;
+  width:48px; height:48px; border-radius:50%; border:1px solid var(--line-hi);
+  background:linear-gradient(135deg, var(--violet-2), var(--violet-3));
+  color:var(--text-hi); display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  opacity:0; visibility:hidden; transform:translateY(14px);
+  transition:opacity .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease), visibility .3s;
+}
+.back-to-top.show{opacity:1; visibility:visible; transform:translateY(0);}
+.back-to-top:hover{box-shadow:0 10px 30px rgba(157,78,221,0.6); transform:translateY(-3px);}
+.back-to-top svg{width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+
+/* Generic scroll-reveal (elements fade/slide up into view as user scrolls) */
+.scroll-reveal{opacity:0; transform:translateY(26px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.scroll-reveal.in-view{opacity:1; transform:translateY(0);}
+@media(prefers-reduced-motion:reduce){.scroll-reveal{opacity:1; transform:none; transition:none;}}
+
 input,textarea{font-family:inherit;}
 :focus-visible{outline:2px solid var(--lilac-1); outline-offset:3px; border-radius:4px;}
 
@@ -287,6 +324,8 @@ header{
   height:56px; width:auto; display:block; max-width:90%;
   filter:drop-shadow(0 0 10px rgba(157,78,221,0.45));
 }
+.footer-logo{justify-content:flex-start;}
+.footer-logo-img{height:44px;}
 
 /* ---------- Fixed corner buttons ---------- */
 .corner-btn{
@@ -437,65 +476,102 @@ header{
 }
 
 /* ---------- Hero ---------- */
-.hero{padding:108px 0 90px; position:relative;}
+.hero{padding:140px 0 100px; position:relative; overflow:hidden;}
+
+/* decorative grid + spotlights (pure ambience, no layout impact) */
+.hero-bg-grid{
+  position:absolute; inset:-10% -5%; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:54px 54px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 68% 32%, rgba(0,0,0,0.9), transparent 75%);
+  mask-image:radial-gradient(ellipse 60% 55% at 68% 32%, rgba(0,0,0,0.9), transparent 75%);
+  opacity:0.7;
+  animation:gridFloat 18s ease-in-out infinite;
+}
+@keyframes gridFloat{0%,100%{transform:translate(0,0);}50%{transform:translate(-10px,10px);}}
+.hero-spot{position:absolute; z-index:0; pointer-events:none; border-radius:50%; filter:blur(90px);}
+.hero-spot-1{width:44vw; height:44vw; top:-12vw; left:56%; background:radial-gradient(circle, var(--violet-4), transparent 68%); animation:spotPulse 10s ease-in-out infinite;}
+.hero-spot-2{width:28vw; height:28vw; bottom:-6vw; left:0; background:radial-gradient(circle, var(--violet-2), transparent 70%); animation:spotPulse 12s ease-in-out infinite reverse;}
+@keyframes spotPulse{0%,100%{opacity:0.45; transform:scale(1);}50%{opacity:0.8; transform:scale(1.12);}}
+@media(prefers-reduced-motion:reduce){.hero-bg-grid,.hero-spot-1,.hero-spot-2{animation:none;}}
+
+/* staggered entrance for hero copy */
+.reveal-up{opacity:0; transform:translateY(22px); animation:heroUp .8s var(--ease) forwards;}
+.reveal-up.d1{animation-delay:.05s;}
+.reveal-up.d2{animation-delay:.18s;}
+.reveal-up.d3{animation-delay:.32s;}
+.reveal-up.d4{animation-delay:.46s;}
+.reveal-up.d5{animation-delay:.6s;}
+@keyframes heroUp{to{opacity:1; transform:translateY(0);}}
+@media(prefers-reduced-motion:reduce){.reveal-up{opacity:1; transform:none; animation:none;}}
+
 .eyebrow{
   display:inline-flex; align-items:center; gap:8px;
   font-size:0.85rem; color:var(--lilac-1); font-weight:600; letter-spacing:0.3px;
   padding:7px 16px; border:1px solid var(--line-hi); border-radius:100px;
   background:rgba(157,78,221,0.08); margin-bottom:28px;
+  position:relative; z-index:2;
 }
-.eyebrow .dot{width:7px; height:7px; border-radius:50%; background:var(--lilac-1); box-shadow:0 0 10px var(--lilac-1);}
+.eyebrow .dot{width:7px; height:7px; border-radius:50%; background:var(--lilac-1); box-shadow:0 0 10px var(--lilac-1); animation:dotPulse 1.8s ease-in-out infinite;}
+@keyframes dotPulse{0%,100%{opacity:1; transform:scale(1);}50%{opacity:0.5; transform:scale(1.3);}}
 
 h1.hero-title{
   font-family:var(--display); font-weight:900; line-height:1.08;
   font-size:clamp(2.6rem, 6vw, 5rem);
-  background:linear-gradient(95deg, #fff 10%, var(--lilac-2) 55%, var(--violet-4) 100%);
+  background:linear-gradient(95deg, #fff 10%, var(--lilac-2) 45%, var(--violet-4) 70%, var(--lilac-2) 100%);
+  background-size:200% auto; background-position:0% 50%;
   -webkit-background-clip:text; background-clip:text; color:transparent;
   max-width:880px; margin-bottom:26px;
+  position:relative; z-index:2;
 }
+
 .hero-sub{
   font-size:1.15rem; color:var(--text-mid); max-width:560px; margin-bottom:40px; font-weight:300;
+  position:relative; z-index:2;
 }
-.hero-actions{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:64px;}
+.hero-actions{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:64px; position:relative; z-index:2;}
 .btn{
   padding:15px 32px; border-radius:100px; font-weight:600; font-size:1rem; border:none;
   transition:transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease);
   display:inline-flex; align-items:center; gap:8px;
+  position:relative; overflow:hidden;
 }
 .btn-primary{
   background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
   color:#10002B; box-shadow:0 6px 24px rgba(157,78,221,0.45);
 }
+.btn-primary::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+  background-size:220% 100%; background-position:-120% 0;
+  animation:btnShine 4.5s ease-in-out infinite;
+}
+@keyframes btnShine{0%{background-position:-120% 0;}55%,100%{background-position:150% 0;}}
 .btn-primary:hover{transform:translateY(-3px); box-shadow:0 10px 32px rgba(199,125,255,0.55);}
 .btn-ghost{
   background:transparent; color:var(--text-hi); border:1px solid var(--line-hi);
 }
 .btn-ghost:hover{background:rgba(199,125,255,0.08); border-color:var(--lilac-1);}
+@media(prefers-reduced-motion:reduce){.btn-primary::after{animation:none; display:none;}}
 
-.stats-row{display:flex; gap:48px; flex-wrap:wrap; padding-top:36px; border-top:1px solid var(--line);}
+.stats-row{display:flex; gap:48px; flex-wrap:wrap; padding-top:36px; border-top:1px solid var(--line); position:relative; z-index:2;}
+@media(max-width:560px){.stats-row{gap:28px;}}
+.stat-item{display:flex; flex-direction:row; align-items:center; gap:12px;}
+.stat-icon{
+  width:38px; height:38px; flex-shrink:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 35% 30%, rgba(224,170,255,0.18), rgba(90,24,154,0.35));
+  border:1px solid var(--line-hi);
+}
+.stat-icon svg{width:18px; height:18px; stroke:var(--lilac-2); fill:none;}
+.stat-text{display:flex; flex-direction:column; align-items:flex-start;}
 .stat-num{
   font-family:var(--display); font-weight:800; font-size:2.2rem; color:var(--lilac-2);
   line-height:1;
 }
 .stat-label{font-size:0.88rem; color:var(--text-low); margin-top:6px;}
-
-/* Signature element: layered "stacked panes" visual representing the studio's layered creative process */
-.hero-visual{
-  position:absolute; left:0; top:90px; width:38%; height:520px;
-  display:flex; align-items:center; justify-content:center;
-  pointer-events:none;
-}
-.pane{
-  position:absolute; border-radius:22px; border:1px solid var(--line-hi);
-  backdrop-filter:blur(6px);
-}
-.pane-1{width:240px; height:300px; background:linear-gradient(160deg, rgba(123,44,191,0.35), rgba(36,0,70,0.2)); transform:rotate(-8deg) translate(-10px,10px); animation:float1 8s ease-in-out infinite;}
-.pane-2{width:240px; height:300px; background:linear-gradient(160deg, rgba(157,78,221,0.3), rgba(60,9,108,0.25)); transform:rotate(4deg) translate(30px,-20px); animation:float2 9s ease-in-out infinite;}
-.pane-3{width:240px; height:300px; background:linear-gradient(160deg, rgba(199,125,255,0.22), rgba(90,24,154,0.18)); transform:rotate(-2deg) translate(60px,40px); animation:float3 10s ease-in-out infinite;}
-@keyframes float1{0%,100%{transform:rotate(-8deg) translate(-10px,10px);}50%{transform:rotate(-6deg) translate(-10px,-6px);}}
-@keyframes float2{0%,100%{transform:rotate(4deg) translate(30px,-20px);}50%{transform:rotate(6deg) translate(34px,-4px);}}
-@keyframes float3{0%,100%{transform:rotate(-2deg) translate(60px,40px);}50%{transform:rotate(-4deg) translate(56px,26px);}}
-@media(max-width:1024px){.hero-visual{display:none;}}
 
 /* ---------- Section shared ---------- */
 section{padding:100px 0;}
@@ -546,7 +622,69 @@ h2.section-title{
   content:'◆'; position:absolute; right:0; color:var(--violet-4); font-size:0.6rem; top:13px;
 }
 
+/* ---------- Team ---------- */
+.team-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:22px;}
+@media(max-width:1100px){.team-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:700px){.team-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:460px){.team-grid{grid-template-columns:1fr;}}
+.team-card{
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:var(--radius); padding:30px 20px; text-align:center;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+}
+.team-card:hover{
+  transform:translateY(-6px); border-color:var(--line-hi);
+  background:linear-gradient(165deg, rgba(90,24,154,0.55), rgba(36,0,70,0.4));
+}
+.team-photo{
+  width:96px; height:96px; border-radius:50%; margin:0 auto 18px; overflow:hidden;
+  border:2px solid var(--line-hi); display:flex; align-items:center; justify-content:center;
+  font-family:var(--display); font-weight:800; font-size:2rem; color:var(--ink-0);
+  background:linear-gradient(135deg,var(--violet-3),var(--lilac-1));
+}
+.team-photo svg{color:var(--ink-0); opacity:.95;}
+.team-photo img{width:100%; height:100%; object-fit:cover; display:block;}
+.team-name{font-family:var(--display); font-size:1.05rem; font-weight:700; color:var(--text-hi); margin-bottom:6px;}
+.team-role{font-size:0.85rem; color:var(--text-low); display:block; line-height:1.5;}
+
+/* ---------- Process / How We Work ---------- */
+.process-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:22px;}
+@media(max-width:900px){.process-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.process-grid{grid-template-columns:1fr;}}
+.process-card{
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:var(--radius); padding:32px 22px; text-align:center;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+}
+.process-card:hover{
+  transform:translateY(-6px); border-color:var(--line-hi);
+  background:linear-gradient(165deg, rgba(90,24,154,0.55), rgba(36,0,70,0.4));
+}
+.process-icon{
+  width:64px; height:64px; margin:0 auto 20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 35% 30%, rgba(224,170,255,0.18), rgba(90,24,154,0.35));
+  border:1px solid var(--line-hi);
+}
+.process-icon svg{width:30px; height:30px; stroke:var(--lilac-2); fill:none;}
+.process-title{
+  position:relative; display:inline-block; font-family:var(--display); font-weight:700;
+  font-size:1.15rem; color:var(--text-hi); margin-bottom:12px; z-index:1;
+}
+.process-title::after{
+  content:''; position:absolute; left:-6px; right:-6px; bottom:2px; height:10px; z-index:-1;
+  background:linear-gradient(90deg, rgba(199,125,255,0.45), rgba(157,78,221,0.45));
+  border-radius:6px; opacity:0.55;
+}
+.process-desc{color:var(--text-mid); font-size:0.92rem; line-height:1.7;}
+.process-step-num{
+  font-family:var(--display); font-weight:800; font-size:0.75rem; color:var(--lilac-1);
+  letter-spacing:1px; display:block; margin-bottom:8px;
+}
+
 /* ---------- Portfolio ---------- */
+
+
 .filter-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:38px;}
 .filter-btn{
   background:transparent; border:1px solid var(--line); color:var(--text-mid);
@@ -1014,6 +1152,8 @@ footer::before{
 </head>
 <body>
 
+<div class="scroll-progress" id="scrollProgress"></div>
+
 <div class="aurora"></div>
 <div class="grain"></div>
 
@@ -1047,7 +1187,9 @@ footer::before{
 <div class="menu-panel" id="menuPanel">
   <nav class="menu-panel-links">
     <a href="#about" onclick="closeMenu()">من نحن</a>
+    <a href="#team" onclick="closeMenu()">فريقنا</a>
     <a href="#services" onclick="closeMenu()">الخدمات</a>
+    <a href="#process" onclick="closeMenu()">طريقة شغلنا</a>
     <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
     <a href="#testimonials" onclick="closeMenu()">آراء العملاء</a>
     <a href="#comments" onclick="closeMenu()">التعليقات</a>
@@ -1060,23 +1202,55 @@ footer::before{
 <main>
   <!-- ============ HERO ============ -->
   <section class="hero">
-    <div class="hero-visual">
-      <div class="pane pane-3"></div>
-      <div class="pane pane-2"></div>
-      <div class="pane pane-1"></div>
-    </div>
+    <div class="hero-bg-grid" aria-hidden="true"></div>
+    <div class="hero-spot hero-spot-1" aria-hidden="true"></div>
+    <div class="hero-spot hero-spot-2" aria-hidden="true"></div>
+
     <div class="wrap">
-      <span class="eyebrow"><span class="dot"></span> Creatix Studio Team</span>
+      <span class="eyebrow reveal-up d1"><span class="dot"></span> Creatix Studio Team</span>
       <h1 class="hero-title">فريق بيحوّل الفكرة لهوية بصرية متكاملة</h1>
-      <p class="hero-sub">إحنا فريق Creatix Studio — مصممين، مطورين، ومونتيرين شغالين سوا عشان كل براند يطلع بصوت بصري مميز. شغلنا مش تصاميم منفصلة، ده تجربة متكاملة من أول الفكرة لحد التنفيذ.</p>
-      <div class="hero-actions">
+      <p class="hero-sub reveal-up d3">إحنا فريق Creatix Studio — مصممين، مطورين، ومونتيرين شغالين سوا عشان كل براند يطلع بصوت بصري مميز. شغلنا مش تصاميم منفصلة، ده تجربة متكاملة من أول الفكرة لحد التنفيذ.</p>
+      <div class="hero-actions reveal-up d4">
         <a href="#portfolio" class="btn btn-primary">شاهدوا أعمالنا</a>
         <a href="#contact" class="btn btn-ghost">تواصلوا معانا</a>
       </div>
-      <div class="stats-row">
-        <div><div class="stat-num">36+</div><div class="stat-label">مشروع منجز</div></div>
-        <div><div class="stat-num">20+</div><div class="stat-label">عميل سعيد</div></div>
-        <div><div class="stat-num">5+</div><div class="stat-label">سنوات خبرة جماعية</div></div>
+      <div class="stats-row reveal-up d5">
+        <div class="stat-item">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          </div>
+          <div class="stat-text">
+            <div class="stat-num" data-count="15" data-prefix="+">0</div>
+            <div class="stat-label">مشروع منجز</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          </div>
+          <div class="stat-text">
+            <div class="stat-num" data-count="10" data-prefix="+">0</div>
+            <div class="stat-label">عميل سعيد</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M9.34 13.68L7 22l5-3 5 3-2.34-8.32"></path></svg>
+          </div>
+          <div class="stat-text">
+            <div class="stat-num" data-count="5" data-prefix="+">0</div>
+            <div class="stat-label">سنوات خبرة جماعية</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
+          <div class="stat-text">
+            <div class="stat-num" data-count="200000" data-prefix="+">0</div>
+            <div class="stat-label">مشاهدة على مشاريع العملاء</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1094,6 +1268,48 @@ footer::before{
           <div class="av">C</div><div class="av">R</div><div class="av">X</div>
         </div>
         <span style="color:var(--text-low); font-size:0.9rem;">فريق Creatix Studio — تصميم، تطوير، مونتاج</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TEAM ============ -->
+  <section id="team">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">فريقنا</span>
+        <h2 class="section-title">العقول اللي بتصنع الفرق</h2>
+        <p class="section-desc">تعرفوا على فريق Creatix Studio — كل واحد فينا متخصص في مجاله عشان يخرج مشروعك بأحسن صورة.</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-photo"><img src="https://i.ibb.co/PGB7b93s/OPAIDA-PRO.jpg" alt="عبيدة محي مزيد" loading="lazy"></div>
+          <h3 class="team-name">عبيدة محي مزيد</h3>
+          <span class="team-role">Team owner &amp; Graphic Designer</span>
+        </div>
+        <div class="team-card">
+          <div class="team-photo"><img src="https://i.ibb.co/0ppx9T72/adham.jpg" alt="أدهم وليد نبيل" loading="lazy"></div>
+          <h3 class="team-name">أدهم وليد نبيل</h3>
+          <span class="team-role">Graphic Designer &amp; Social media manager</span>
+        </div>
+        <div class="team-card">
+          <div class="team-photo"><img src="https://i.ibb.co/8gN4y6Gz/Amro.png" alt="عمرو مصطفى عبده" loading="lazy"></div>
+          <h3 class="team-name">عمرو مصطفى عبده</h3>
+          <span class="team-role">Code Engineer</span>
+        </div>
+        <div class="team-card">
+          <div class="team-photo" aria-label="Printing Director">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          </div>
+          <h3 class="team-name">محمد علي طلب</h3>
+          <span class="team-role">Printing Director</span>
+        </div>
+        <div class="team-card">
+          <div class="team-photo" aria-label="Code Programmer">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <h3 class="team-name">عمر ابراهيم عيسى</h3>
+          <span class="team-role">Code Programmer</span>
+        </div>
       </div>
     </div>
   </section>
@@ -1139,6 +1355,69 @@ footer::before{
             <li>مؤثرات بصرية وموشن</li>
             <li>تعديل الألوان وتحسين الجودة</li>
           </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROCESS / HOW WE WORK ============ -->
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">طريقة شغلنا</span>
+        <h2 class="section-title">إزاي بنشتغل معاك؟</h2>
+        <p class="section-desc">من أول ما تحكيلنا فكرتك لحد ما تستلم شغلك جاهز — ده الطريق اللي بنمشيه سوا خطوة خطوة.</p>
+      </div>
+      <div class="process-grid">
+        <div class="process-card">
+          <div class="process-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 14v-2a9 9 0 0 1 18 0v2"></path>
+              <path d="M21 15a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h3v4Z"></path>
+              <path d="M3 15a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H3v4Z"></path>
+            </svg>
+          </div>
+          <span class="process-step-num">STEP 01</span>
+          <h3 class="process-title">هنسمعك</h3>
+          <p class="process-desc">نسمع فكرتك وأهداف مشروعك بالتفصيل قبل ما نحرك قلم.</p>
+        </div>
+        <div class="process-card">
+          <div class="process-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+              <path d="M2 2l7.586 7.586"></path>
+              <circle cx="11" cy="11" r="2"></circle>
+            </svg>
+          </div>
+          <span class="process-step-num">STEP 02</span>
+          <h3 class="process-title">هنصمم</h3>
+          <p class="process-desc">نحول الفكرة لتصميم وهوية بصرية بتعبر عنك فعلاً.</p>
+        </div>
+        <div class="process-card">
+          <div class="process-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+              <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </div>
+          <span class="process-step-num">STEP 03</span>
+          <h3 class="process-title">هنراجع</h3>
+          <p class="process-desc">تعديلات ومراجعات مستمرة لحد ما تكون راضي 100%.</p>
+        </div>
+        <div class="process-card">
+          <div class="process-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <span class="process-step-num">STEP 04</span>
+          <h3 class="process-title">هنسلّم</h3>
+          <p class="process-desc">تسليم كل الملفات جاهزة ومظبوطة للاستخدام فورًا.</p>
         </div>
       </div>
     </div>
@@ -1228,7 +1507,7 @@ footer::before{
 
       <!-- Brand -->
       <div class="footer-brand">
-        <div class="logo"><span class="logo-mark">C</span> Creatix Studio</div>
+        <div class="logo footer-logo"><img src="data:image/png;base64,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" alt="Creatix Studio" class="logo-img footer-logo-img"></div>
         <p>فريق تصميم جرافيك، تطوير ويب، ومونتاج فيديو.<br>بنصنع هويات بصرية بتفرق فعلاً.</p>
       </div>
 
@@ -1239,6 +1518,8 @@ footer::before{
           <li><a href="#hero">الرئيسية</a></li>
           <li><a href="#services">الخدمات</a></li>
           <li><a href="#about">من نحن</a></li>
+          <li><a href="#team">فريقنا</a></li>
+          <li><a href="#process">طريقة شغلنا</a></li>
           <li><a href="#portfolio">أعمالنا</a></li>
           <li><a href="#testimonials">آراء العملاء</a></li>
           <li><a href="#comments">التعليقات</a></li>
@@ -1255,7 +1536,7 @@ footer::before{
         </ul>
       </div>
 
-      <!-- Social — Facebook only -->
+      <!-- Social — Facebook, Discord, Email -->
       <div class="footer-col">
         <h4>السوشيال</h4>
         <ul class="footer-social-list">
@@ -1267,6 +1548,37 @@ footer::before{
                 </svg>
               </span>
               Facebook
+            </a>
+          </li>
+          <li class="social-item">
+            <a href="https://wa.me/201223093974" target="_blank" rel="noopener">
+              <span class="social-icon-wrap">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12.001 2C6.478 2 2 6.477 2 11.999c0 1.996.588 3.85 1.601 5.408L2 22l4.71-1.577A9.96 9.96 0 0 0 12.001 22C17.523 22 22 17.523 22 12S17.523 2 12.001 2zm0 18.153a8.14 8.14 0 0 1-4.15-1.134l-.298-.177-2.798.937.94-2.727-.194-.28a8.14 8.14 0 0 1-1.31-4.373c0-4.494 3.657-8.15 8.152-8.15 2.177 0 4.223.849 5.762 2.39a8.09 8.09 0 0 1 2.388 5.763c.002 4.494-3.655 8.151-8.492 8.151z"/>
+                </svg>
+              </span>
+              WhatsApp
+            </a>
+          </li>
+          <li class="social-item">
+            <a href="https://discord.gg/uugVFvEMb" target="_blank" rel="noopener">
+              <span class="social-icon-wrap">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.29a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.196.373.291a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.333-.955 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.333-.946 2.419-2.157 2.419z"/>
+                </svg>
+              </span>
+              Discord
+            </a>
+          </li>
+          <li class="social-item">
+            <a href="mailto:creatixstudio1@gmail.com">
+              <span class="social-icon-wrap">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.5 4.5A1.5 1.5 0 0 1 3 3h18a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 21 21H3a1.5 1.5 0 0 1-1.5-1.5v-15zM4.5 6.75v.638l7.5 5.114 7.5-5.114V6.75l-7.5 5.114-7.5-5.114z"/>
+                </svg>
+              </span>
+              creatixstudio1@gmail.com
             </a>
           </li>
         </ul>
@@ -1281,6 +1593,10 @@ footer::before{
 </footer>
 
 <!-- ============ CHATBOT ============ -->
+<button class="back-to-top" id="backToTop" aria-label="ارجع لأعلى الصفحة">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="18 15 12 9 6 15"></polyline></svg>
+</button>
+
 <button class="chat-launcher" id="chatLauncher" aria-label="افتح الشات بوت">
   🤖 <span class="badge" id="chatBadge">1</span>
 </button>
@@ -1537,6 +1853,15 @@ footer::before{
         <div class="save-bar">
           <button class="btn btn-primary" onclick="saveBotTexts()">💾 حفظ نصوص البوت</button>
         </div>
+
+        <div class="dash-card">
+          <h4>📚 قاعدة الأسئلة والأجوبة الموسّعة (<span id="botQACount">0</span>)</h4>
+          <p style="color:var(--text-mid); font-size:0.88rem; margin-bottom:20px;">أضف أي سؤال بكتابة كلمات مفتاحية (افصل بينها بفاصلة) والرد اللي عايز البوت يقوله لما حد يكتب أي كلمة منها.</p>
+          <div class="field"><label>كلمات مفتاحية (افصل بفاصلة)</label><input type="text" id="botQAPatterns" placeholder="مثال: لوجو, شعار, هوية بصرية"></div>
+          <div class="field"><label>الرد</label><textarea id="botQAReply" placeholder="اكتب رد البوت هنا..."></textarea></div>
+          <button class="btn btn-primary" onclick="addBotQA()">➕ إضافة سؤال جديد</button>
+          <div class="item-list" id="botQAList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1570,8 +1895,26 @@ const DEFAULT_BOT = {
   services: 'فريقنا بيقدم 3 خدمات أساسية: 🎨 جرافيك ديزاين (شعارات وهوية بصرية)، 💻 تصميم وتطوير مواقع، 🎬 مونتاج فيديوهات احترافي. تحب تعرف تفاصيل أكتر عن أي خدمة؟',
   price: 'الأسعار بتختلف حسب حجم المشروع ومتطلباته. كلم فريقنا على واتساب وهنبعتلك عرض سعر مخصص لمشروعك خلال وقت قصير.',
   time: 'مدة التسليم بتختلف حسب نوع المشروع: التصاميم البسيطة 2-3 أيام، الهوية البصرية الكاملة أسبوع لأسبوعين، مواقع الويب من أسبوعين لشهر حسب التعقيد.',
-  contact: 'تقدر تتواصل مع فريقنا مباشرة على واتساب وهنرد عليك بأسرع وقت ممكن. تحب أفتحلك الرابط؟'
+  contact: 'تقدر تتواصل مع فريقنا مباشرة على واتساب وهنرد عليك بأسرع وقت ممكن. تحب أفتحلك الرابط؟',
+  extraQA: [
+    { id:1,  patterns:'مرحبا, أهلا, هاي, السلام عليكم, صباح الخير, مساء الخير', reply:'أهلاً بيك! 😊 اسألني عن أي حاجة تخص Creatix Studio وأنا هنا أساعدك.' },
+    { id:2,  patterns:'شكرا, تمام كده, تسلم, يعطيك العافية', reply:'العفو! 🙏 لو محتاج أي حاجة تانية أنا موجود.' },
+    { id:3,  patterns:'فريق, مين انتوا, تعرفني بالفريق, اعضاء الفريق', reply:'إحنا فريق Creatix Studio 💜 — مصممين ومطورين ومونتيرين شغالين سوا. تقدر تشوف كل الأعضاء وتخصصاتهم في قسم "فريقنا" فوق في الموقع.' },
+    { id:4,  patterns:'ازاي بتشتغلوا, طريقة الشغل, خطوات المشروع, المراحل', reply:'بنشتغل معاك في 4 خطوات: هنسمعك، هنصمم، هنراجع مع بعض، وأخيرًا هنسلّمك شغلك جاهز. تقدر تشوف تفاصيل أكتر في قسم "طريقة شغلنا".' },
+    { id:5,  patterns:'اعمال سابقة, بورتفوليو, شغل قبل كده, نماذج', reply:'تقدر تشوف نماذج من أعمالنا في قسم "أعمالنا" في الموقع، فيه شعارات وهويات ومواقع ومونتاج فيديوهات اشتغلنا عليها.' },
+    { id:6,  patterns:'تعديلات, مراجعة, لو مش عاجبني, تغيير التصميم', reply:'من أهم حاجة عندنا إنك تكون راضي 100% عن شغلك، فبنعمل تعديلات ومراجعات لحد ما التصميم يطلع بالشكل اللي انت عايزه بالظبط.' },
+    { id:7,  patterns:'الدفع, وسيلة الدفع, ازاي ادفع, دفع مقدم', reply:'وسائل الدفع بنتفق عليها مع كل عميل حسب طبيعة المشروع. كلم فريقنا على واتساب وهنوضحلك التفاصيل.' },
+    { id:8,  patterns:'سوشيال ميديا, حساباتكم, فيسبوك, انستجرام, دسكورد', reply:'تقدر تلاقي كل حساباتنا على السوشيال ميديا (فيسبوك، واتساب، ديسكورد) في أسفل الموقع في قسم الفوتر.' },
+    { id:9,  patterns:'طباعة, برنت, بروشور, كارت شخصي', reply:'أيوه، عندنا خدمة طباعة كمان (بروشورات، كروت شخصية، وغيرها). كلم فريقنا وهيوضحلك التفاصيل والأسعار.' },
+    { id:10, patterns:'موقع, ويب سايت, تصميم موقع, تطوير موقع', reply:'بنصمم ونطور مواقع بتناسب هوية براندك، من صفحة هبوط بسيطة لحد موقع متكامل بلوحة تحكم. قولنا احتياجك وهنساعدك.' },
+    { id:11, patterns:'مونتاج, فيديو, ريلز, تصوير', reply:'بنعمل مونتاج فيديوهات احترافي للريلز والإعلانات والمحتوى التسويقي، مع مؤثرات بصرية وتعديل ألوان.' },
+    { id:12, patterns:'لوجو, شعار, هوية بصرية, براند', reply:'تصميم الشعارات والهوية البصرية هو أساس شغلنا 🎨، بنصمملك هوية كاملة بتعبر عن براندك من أول لمحة.' },
+    { id:13, patterns:'خصم, عرض, تخفيض, أوفر', reply:'العروض والخصومات بتختلف حسب الفترة وحجم المشروع، كلم فريقنا على واتساب عشان تعرف لو في عرض متاح حاليًا.' },
+    { id:14, patterns:'كورس, دورة, تعلم تصميم, دورات', reply:'إحنا بنجهز كورسات في التصميم الجرافيكي، تطوير الألعاب، وتصميم الويب/UI. تابعنا عشان تعرف تفاصيل الإطلاق أول بأول.' },
+    { id:15, patterns:'اونلاين, عن بعد, مكان الفريق, فين موجودين', reply:'فريقنا شغال أونلاين، فبنقدر نخدم عملاء من أي مكان بكل سهولة.' }
+  ]
 };
+
 
 function loadData(key, fallback){
   try{
@@ -1587,6 +1930,7 @@ function saveData(key, data){
 let WORKS = loadData(LS_KEYS.works, DEFAULT_WORKS);
 let REVIEWS = loadData(LS_KEYS.reviews, DEFAULT_REVIEWS);
 let BOT_TEXTS = loadData(LS_KEYS.bot, DEFAULT_BOT);
+if(!Array.isArray(BOT_TEXTS.extraQA)) BOT_TEXTS.extraQA = JSON.parse(JSON.stringify(DEFAULT_BOT.extraQA));
 let currentFilter = 'all';
 let lightboxIndex = 0;
 let lightboxList = [];
@@ -1906,10 +2250,18 @@ function sendChat(){
 }
 function matchBotReply(msg){
   const m = msg.toLowerCase();
+  // 1) Search the expanded Q&A knowledge base first
+  const qa = (BOT_TEXTS.extraQA || []).find(entry=>{
+    const keywords = (entry.patterns || '').split(',').map(k=>k.trim()).filter(Boolean);
+    return keywords.some(k => m.includes(k.toLowerCase()));
+  });
+  if(qa) return qa.reply;
+  // 2) Fall back to the 4 core fixed topics
   if(/خدم|تصميم|جرافيك|فيديو|موقع/.test(m)) return BOT_TEXTS.services;
   if(/سعر|تكلفة|فلوس|كام/.test(m)) return BOT_TEXTS.price;
   if(/وقت|مدة|تسليم|متى/.test(m)) return BOT_TEXTS.time;
   if(/تواصل|واتس|رقم|ايميل/.test(m)) return BOT_TEXTS.contact;
+  // 3) Generic fallback
   return 'شكرًا لرسالتك! 🙏 لو عايز تعرف أكتر عن خدماتنا أو أسعارنا، اختار من الأزرار اللي فوق، أو كلم فريقنا مباشرة على واتساب.';
 }
 
@@ -2108,6 +2460,7 @@ function loadBotForm(){
   document.getElementById('botPrice').value = BOT_TEXTS.price;
   document.getElementById('botTime').value = BOT_TEXTS.time;
   document.getElementById('botContact').value = BOT_TEXTS.contact;
+  renderBotQAList();
 }
 function saveBotTexts(){
   BOT_TEXTS = {
@@ -2116,9 +2469,51 @@ function saveBotTexts(){
     price: document.getElementById('botPrice').value.trim() || DEFAULT_BOT.price,
     time: document.getElementById('botTime').value.trim() || DEFAULT_BOT.time,
     contact: document.getElementById('botContact').value.trim() || DEFAULT_BOT.contact,
+    extraQA: BOT_TEXTS.extraQA || [],
   };
   saveData(LS_KEYS.bot, BOT_TEXTS);
   showToast('💾 تم حفظ نصوص البوت بنجاح');
+}
+
+/* ============================================
+   ADMIN — BOT EXTENDED Q&A KNOWLEDGE BASE
+   ============================================ */
+function renderBotQAList(){
+  const list = document.getElementById('botQAList');
+  const qa = BOT_TEXTS.extraQA || [];
+  document.getElementById('botQACount').textContent = qa.length;
+  if(qa.length === 0){
+    list.innerHTML = '<div class="empty-row">لسه مفيش أسئلة مضافة</div>';
+    return;
+  }
+  list.innerHTML = qa.map(item => `
+    <div class="item-row">
+      <div class="thumb-ph">❓</div>
+      <div class="meta">
+        <div class="t">${escapeHtml(item.patterns)}</div>
+        <div class="c">${escapeHtml((item.reply||'').slice(0,70))}${(item.reply||'').length>70?'...':''}</div>
+      </div>
+      <button class="del" onclick="deleteBotQA(${item.id})">🗑️</button>
+    </div>
+  `).join('');
+}
+function addBotQA(){
+  const patterns = document.getElementById('botQAPatterns').value.trim();
+  const reply = document.getElementById('botQAReply').value.trim();
+  if(!patterns || !reply){ showToast('⚠️ من فضلك اكتب الكلمات المفتاحية والرد'); return; }
+  if(!Array.isArray(BOT_TEXTS.extraQA)) BOT_TEXTS.extraQA = [];
+  BOT_TEXTS.extraQA.unshift({ id: Date.now(), patterns, reply });
+  document.getElementById('botQAPatterns').value = '';
+  document.getElementById('botQAReply').value = '';
+  renderBotQAList();
+  saveData(LS_KEYS.bot, BOT_TEXTS);
+  showToast('✅ تم إضافة السؤال');
+}
+function deleteBotQA(id){
+  BOT_TEXTS.extraQA = (BOT_TEXTS.extraQA || []).filter(item => item.id !== id);
+  renderBotQAList();
+  saveData(LS_KEYS.bot, BOT_TEXTS);
+  showToast('🗑️ تم حذف السؤال');
 }
 
 /* ============================================
@@ -2435,6 +2830,106 @@ function escHtml(str){
 window.__currentUser = null;
 renderCommentAuthUI();
 renderProfileCard();
+
+/* ============================================
+   HERO STATS — COUNTER ANIMATION
+   ============================================ */
+(function(){
+  const nums = document.querySelectorAll('.stat-num[data-count]');
+  if(!nums.length) return;
+  function formatNum(n){
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+  function animateCount(el){
+    const target = parseFloat(el.getAttribute('data-count')) || 0;
+    const prefix = el.getAttribute('data-prefix') || '';
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      el.textContent = prefix + formatNum(target);
+      return;
+    }
+    const duration = 1600;
+    const start = performance.now();
+    function tick(now){
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
+      const value = target * eased;
+      el.textContent = prefix + formatNum(value);
+      if(progress < 1) requestAnimationFrame(tick);
+      else el.textContent = prefix + formatNum(target);
+    }
+    requestAnimationFrame(tick);
+  }
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        animateCount(entry.target);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  nums.forEach(el => obs.observe(el));
+})();
+
+/* ============================================
+   SCROLL PROGRESS BAR + BACK TO TOP
+   ============================================ */
+(function(){
+  const bar = document.getElementById('scrollProgress');
+  const topBtn = document.getElementById('backToTop');
+  let ticking = false;
+  function update(){
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const pct = height > 0 ? (scrollTop / height) * 100 : 0;
+    if(bar) bar.style.width = pct + '%';
+    if(topBtn) topBtn.classList.toggle('show', scrollTop > 480);
+    ticking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if(!ticking){ requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  update();
+  if(topBtn){
+    topBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+})();
+
+/* ============================================
+   GENERIC SCROLL-REVEAL FOR CARDS/GRIDS
+   ============================================ */
+(function(){
+  const staticSelectors = ['.service-card', '.team-card', '.process-card'];
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach((entry, i) => {
+      if(entry.isIntersecting){
+        setTimeout(() => entry.target.classList.add('in-view'), (i % 6) * 90);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  function prep(el){
+    if(el.classList.contains('scroll-reveal')) return;
+    el.classList.add('scroll-reveal');
+    obs.observe(el);
+  }
+
+  document.querySelectorAll(staticSelectors.join(',')).forEach(prep);
+
+  // Watch grids that get populated dynamically (portfolio + testimonials)
+  ['portfolioGrid', 'testGrid'].forEach(id => {
+    const grid = document.getElementById(id);
+    if(!grid) return;
+    grid.querySelectorAll(':scope > *').forEach(prep);
+    new MutationObserver(muts => {
+      muts.forEach(m => m.addedNodes.forEach(node => {
+        if(node.nodeType === 1) prep(node);
+      }));
+    }).observe(grid, { childList: true });
+  });
+})();
 
 /* ============================================
    FOOTER REVEAL ANIMATION
