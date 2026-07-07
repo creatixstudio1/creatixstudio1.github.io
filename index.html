@@ -682,7 +682,102 @@ h2.section-title{
   letter-spacing:1px; display:block; margin-bottom:8px;
 }
 
+/* ---------- Booking ---------- */
+.booking-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:26px; align-items:start;}
+@media(max-width:900px){.booking-grid{grid-template-columns:1fr;}}
+.booking-card{
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:var(--radius); padding:34px;
+}
+@media(max-width:560px){.booking-card{padding:24px 20px;}}
+.booking-row{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+@media(max-width:600px){.booking-row{grid-template-columns:1fr;}}
+.booking-field-icon{position:relative;}
+.booking-field-icon input, .booking-field-icon select{padding-inline-end:44px;}
+.booking-field-icon svg{
+  position:absolute; inset-inline-end:14px; top:41px;
+  width:18px; height:18px; stroke:var(--text-low); fill:none; pointer-events:none;
+}
+.booking-field-icon select{appearance:none; -webkit-appearance:none; cursor:pointer;}
+
+.custom-select{position:relative;}
+.custom-select-trigger{
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--line); color:#fff;
+  padding:12px 16px; border-radius:12px; font-size:0.92rem; font-family:var(--body);
+  cursor:pointer; text-align:right; transition:border-color .2s var(--ease);
+}
+.custom-select-trigger:hover, .custom-select-trigger.open{border-color:var(--lilac-1);}
+.custom-select-trigger .chevron{width:16px; height:16px; stroke:var(--text-low); fill:none; flex-shrink:0; transition:transform .25s var(--ease);}
+.custom-select-trigger.open .chevron{transform:rotate(180deg);}
+.custom-select-menu{
+  position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:30;
+  background:var(--ink-1); border:1px solid var(--line-hi); border-radius:14px;
+  padding:6px; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  opacity:0; visibility:hidden; transform:translateY(-6px);
+  transition:opacity .2s var(--ease), transform .2s var(--ease), visibility .2s;
+  max-height:240px; overflow-y:auto;
+}
+.custom-select-menu.open{opacity:1; visibility:visible; transform:translateY(0);}
+.custom-select-option{
+  padding:11px 14px; border-radius:9px; font-size:0.9rem; color:var(--text-mid);
+  cursor:pointer; transition:background .18s var(--ease), color .18s var(--ease); font-family:var(--body);
+}
+.custom-select-option:hover{background:rgba(157,78,221,0.15); color:var(--text-hi);}
+.custom-select-option.selected{background:linear-gradient(135deg, var(--violet-3), var(--violet-2)); color:#fff; font-weight:600;}
+
+.booking-info-box{
+  margin:2px 0 22px; padding:14px 16px; border-radius:12px;
+  background:rgba(157,78,221,0.1); border:1px solid var(--line-hi);
+  display:none; align-items:center; gap:10px; font-size:0.88rem; color:var(--text-mid);
+}
+.booking-info-box.show{display:flex;}
+
+.package-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px;}
+@media(max-width:700px){.package-grid{grid-template-columns:1fr;}}
+.package-option{
+  border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer;
+  transition:border-color .25s var(--ease), background .25s var(--ease), transform .25s var(--ease);
+  position:relative; background:rgba(255,255,255,0.02);
+}
+.package-option:hover{border-color:var(--line-hi); transform:translateY(-3px);}
+.package-option.selected{border-color:var(--lilac-1); background:rgba(157,78,221,0.14); box-shadow:0 0 0 1px var(--lilac-1) inset;}
+.package-option .pkg-name{font-family:var(--display); font-weight:700; color:var(--text-hi); margin-bottom:6px;}
+.package-option .pkg-price{font-family:var(--display); font-weight:800; font-size:1.25rem; color:var(--lilac-2); margin-bottom:12px;}
+.package-option ul{list-style:none; display:flex; flex-direction:column; gap:6px;}
+.package-option li{font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; align-items:flex-start; line-height:1.5;}
+.package-option li::before{content:'✓'; color:var(--lilac-1); flex-shrink:0;}
+.package-badge{
+  position:absolute; top:-11px; inset-inline-end:14px;
+  background:linear-gradient(135deg,var(--violet-3),var(--lilac-1)); color:#fff;
+  font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:100px;
+}
+
+.booking-submit-status{margin-top:14px; font-size:0.86rem; text-align:center; min-height:20px;}
+
+.booking-steps-card{
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:var(--radius); padding:32px 28px;
+}
+.booking-steps-card h3{font-family:var(--display); font-size:1.15rem; font-weight:700; color:var(--text-hi);}
+.booking-steps-list{position:relative; margin-top:26px;}
+.booking-step{display:flex; gap:14px; padding-bottom:28px; position:relative;}
+.booking-step:last-child{padding-bottom:0;}
+.booking-step::before{
+  content:''; position:absolute; inset-inline-start:15px; top:34px; bottom:0; width:1px; background:var(--line-hi);
+}
+.booking-step:last-child::before{display:none;}
+.booking-step .num{
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--line-hi); background:var(--ink-1);
+  color:var(--lilac-2); font-family:var(--display); font-weight:800; font-size:0.9rem;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; z-index:1;
+}
+.booking-step .txt h4{font-family:var(--display); font-size:0.96rem; color:var(--text-hi); margin-bottom:4px;}
+.booking-step .txt p{font-size:0.8rem; color:var(--text-low); line-height:1.6;}
+
 /* ---------- Portfolio ---------- */
+
+
 
 
 .filter-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:38px;}
@@ -1191,6 +1286,7 @@ footer::before{
     <a href="#services" onclick="closeMenu()">الخدمات</a>
     <a href="#process" onclick="closeMenu()">طريقة شغلنا</a>
     <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
+    <a href="#booking" onclick="closeMenu()">احجز خدمتك</a>
     <a href="#testimonials" onclick="closeMenu()">آراء العملاء</a>
     <a href="#comments" onclick="closeMenu()">التعليقات</a>
     <a href="#contact" onclick="closeMenu()">تواصل معنا</a>
@@ -1484,6 +1580,87 @@ footer::before{
     </div>
   </section>
 
+  <!-- ============ BOOKING ============ -->
+  <section id="booking">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">احجز خدمتك</span>
+        <h2 class="section-title">ابدأ مشروعك مع Creatix Studio دلوقتي</h2>
+        <p class="section-desc">املا البيانات، اختار الخدمة والباقة اللي تناسبك، وهيوصل طلبك لفريقنا فورًا.</p>
+      </div>
+
+      <div class="booking-grid">
+        <!-- Form -->
+        <div class="booking-card">
+          <div class="booking-row">
+            <div class="field booking-field-icon">
+              <label>الاسم بالكامل</label>
+              <input type="text" id="bookingName" placeholder="مثال: أحمد محمد">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="field booking-field-icon">
+              <label>الوظيفة / الصفة</label>
+              <input type="text" id="bookingJob" placeholder="مثال: صاحب سنتر تعليمي، معلم مادة التاريخ">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            </div>
+          </div>
+
+          <div class="booking-row">
+            <div class="field booking-field-icon">
+              <label>رقم الهاتف للتواصل</label>
+              <input type="tel" id="bookingPhone" placeholder="e.g. +20 101 234 5678">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            </div>
+            <div class="field">
+              <label>اختار الخدمة المطلوبة</label>
+              <div class="custom-select" id="serviceCustomSelect">
+                <button type="button" class="custom-select-trigger" id="serviceSelectTrigger" onclick="toggleServiceDropdown()" aria-haspopup="listbox" aria-expanded="false">
+                  <span id="serviceSelectLabel">اضغط لاختيار الخدمة</span>
+                  <svg class="chevron" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="custom-select-menu" id="serviceSelectMenu" role="listbox">
+                  <div class="custom-select-option" data-value="graphic" role="option" onclick="chooseService('graphic','الجرافيك ديزاين')">الجرافيك ديزاين</div>
+                  <div class="custom-select-option" data-value="web" role="option" onclick="chooseService('web','تصميم الويب')">تصميم الويب</div>
+                  <div class="custom-select-option" data-value="video" role="option" onclick="chooseService('video','مونتاج الفيديوهات')">مونتاج الفيديوهات</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="booking-info-box" id="deliveryInfoBox"></div>
+
+          <div class="package-grid" id="packageGrid"></div>
+
+          <button class="btn btn-primary" id="bookingSubmitBtn" onclick="submitBooking()" style="width:100%; justify-content:center; padding:15px;">احجز طلبك الآن</button>
+          <div class="booking-submit-status" id="bookingStatus"></div>
+        </div>
+
+        <!-- Steps -->
+        <div class="booking-steps-card">
+          <h3>خطوات الحجز</h3>
+          <div class="booking-steps-list">
+            <div class="booking-step">
+              <div class="num">1</div>
+              <div class="txt"><h4>بياناتك الشخصية</h4><p>أدخل اسمك ووظيفتك ورقم هاتفك عشان نقدر نتواصل معاك.</p></div>
+            </div>
+            <div class="booking-step">
+              <div class="num">2</div>
+              <div class="txt"><h4>اختيار الخدمة</h4><p>حدد الخدمة اللي محتاجها: جرافيك، ويب، أو مونتاج فيديو.</p></div>
+            </div>
+            <div class="booking-step">
+              <div class="num">3</div>
+              <div class="txt"><h4>اختيار الباقة</h4><p>شوف متوسط مدة التسليم والباقات المتاحة واختار اللي يناسبك.</p></div>
+            </div>
+            <div class="booking-step">
+              <div class="num">4</div>
+              <div class="txt"><h4>تأكيد الطلب</h4><p>هيوصل طلبك لفريقنا فورًا وهنتواصل معاك بأسرع وقت لتأكيد التفاصيل.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ CONTACT / CTA ============ -->
   <section id="contact">
     <div class="wrap">
@@ -1521,6 +1698,7 @@ footer::before{
           <li><a href="#team">فريقنا</a></li>
           <li><a href="#process">طريقة شغلنا</a></li>
           <li><a href="#portfolio">أعمالنا</a></li>
+          <li><a href="#booking">احجز خدمتك</a></li>
           <li><a href="#testimonials">آراء العملاء</a></li>
           <li><a href="#comments">التعليقات</a></li>
         </ul>
@@ -2263,6 +2441,179 @@ function matchBotReply(msg){
   if(/تواصل|واتس|رقم|ايميل/.test(m)) return BOT_TEXTS.contact;
   // 3) Generic fallback
   return 'شكرًا لرسالتك! 🙏 لو عايز تعرف أكتر عن خدماتنا أو أسعارنا، اختار من الأزرار اللي فوق، أو كلم فريقنا مباشرة على واتساب.';
+}
+
+/* ============================================
+   BOOKING SECTION
+   ============================================ */
+// بيانات الخدمات والباقات (أسعار وهمية مؤقتة — هيتم استبدالها بالأسعار الحقيقية لاحقًا)
+const BOOKING_SERVICES = {
+  graphic: {
+    name: 'الجرافيك ديزاين',
+    delivery: '⏱️ متوسط مدة التسليم: 3 - 5 أيام عمل',
+    packages: [
+      { name:'أساسية', price:'500 ج.م', features:['تصميم شعار واحد','نسخة تعديل واحدة','ملف بصيغة PNG/JPG'] },
+      { name:'احترافية', price:'1200 ج.م', badge:'الأكثر طلبًا', features:['هوية بصرية كاملة','حتى 3 تعديلات','ملفات مفتوحة المصدر (AI/PSD)'] },
+      { name:'بريميوم', price:'2500 ج.م', features:['هوية متكاملة + كتيب براند','تعديلات غير محدودة لمدة أسبوع','دعم فني بعد التسليم'] },
+    ]
+  },
+  web: {
+    name: 'تصميم الويب',
+    delivery: '⏱️ متوسط مدة التسليم: أسبوعين - شهر',
+    packages: [
+      { name:'أساسية', price:'2000 ج.م', features:['صفحة هبوط واحدة','تصميم متجاوب لكل الشاشات','نموذج تواصل بسيط'] },
+      { name:'احترافية', price:'5000 ج.م', badge:'الأكثر طلبًا', features:['موقع متكامل حتى 5 صفحات','تصميم مخصص بالكامل','ربط بحسابات السوشيال ميديا'] },
+      { name:'بريميوم', price:'9000 ج.م', features:['موقع + لوحة تحكم إدارية','تكامل مع قواعد بيانات','دعم فني لمدة شهر كامل'] },
+    ]
+  },
+  video: {
+    name: 'مونتاج الفيديوهات',
+    delivery: '⏱️ متوسط مدة التسليم: 3 - 7 أيام',
+    packages: [
+      { name:'أساسية', price:'400 ج.م', features:['فيديو حتى دقيقة واحدة','تعديل ألوان بسيط','ملف جاهز للنشر'] },
+      { name:'احترافية', price:'900 ج.م', badge:'الأكثر طلبًا', features:['فيديو حتى 5 دقايق','موشن جرافيك بسيط','تعديلين مجانين'] },
+      { name:'بريميوم', price:'1800 ج.م', features:['فيديو طويل بالكامل','مؤثرات بصرية متقدمة','تعديل ألوان احترافي'] },
+    ]
+  }
+};
+
+let selectedBookingPackage = null;
+let selectedBookingService = '';
+
+function toggleServiceDropdown(force){
+  const menu = document.getElementById('serviceSelectMenu');
+  const trigger = document.getElementById('serviceSelectTrigger');
+  const open = force !== undefined ? force : !menu.classList.contains('open');
+  menu.classList.toggle('open', open);
+  trigger.classList.toggle('open', open);
+  trigger.setAttribute('aria-expanded', open);
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('serviceCustomSelect');
+  if(wrap && !wrap.contains(e.target)) toggleServiceDropdown(false);
+});
+
+function chooseService(key, label){
+  selectedBookingService = key;
+  document.getElementById('serviceSelectLabel').textContent = label;
+  document.querySelectorAll('#serviceSelectMenu .custom-select-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.value === key);
+  });
+  toggleServiceDropdown(false);
+  onBookingServiceChange(key);
+}
+
+function onBookingServiceChange(key){
+  const infoBox = document.getElementById('deliveryInfoBox');
+  const grid = document.getElementById('packageGrid');
+  selectedBookingPackage = null;
+  if(!key){
+    infoBox.classList.remove('show');
+    grid.innerHTML = '';
+    return;
+  }
+  const svc = BOOKING_SERVICES[key];
+  infoBox.classList.add('show');
+  infoBox.innerHTML = `<strong>${svc.delivery}</strong>`;
+  grid.innerHTML = svc.packages.map((p, i) => `
+    <div class="package-option" data-index="${i}" onclick="selectBookingPackage(${i})">
+      ${p.badge ? `<span class="package-badge">${escapeHtml(p.badge)}</span>` : ''}
+      <div class="pkg-name">${escapeHtml(p.name)}</div>
+      <div class="pkg-price">${escapeHtml(p.price)}</div>
+      <ul>${p.features.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+}
+
+function selectBookingPackage(i){
+  selectedBookingPackage = i;
+  document.querySelectorAll('#packageGrid .package-option').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+}
+
+function resetBookingForm(){
+  document.getElementById('bookingName').value = '';
+  document.getElementById('bookingJob').value = '';
+  document.getElementById('bookingPhone').value = '';
+  selectedBookingService = '';
+  document.getElementById('serviceSelectLabel').textContent = 'اضغط لاختيار الخدمة';
+  document.querySelectorAll('#serviceSelectMenu .custom-select-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('deliveryInfoBox').classList.remove('show');
+  document.getElementById('packageGrid').innerHTML = '';
+  selectedBookingPackage = null;
+}
+
+// ⚠️ TODO يا Joe: حط بيانات بوت التليجرام هنا لما تخلص بناء البوت
+const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';
+const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID_HERE';
+
+function sendBookingToTelegram(text){
+  if(TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE' || TELEGRAM_CHAT_ID === 'YOUR_CHAT_ID_HERE'){
+    console.warn('⚠️ بيانات بوت التليجرام لسه مش متظبطة (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID). هيتم استخدام واتساب كبديل مؤقت.');
+    return Promise.resolve(false);
+  }
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+  })
+  .then(res => res.ok)
+  .catch(() => false);
+}
+
+function submitBooking(){
+  const name = document.getElementById('bookingName').value.trim();
+  const job = document.getElementById('bookingJob').value.trim();
+  const phone = document.getElementById('bookingPhone').value.trim();
+  const serviceKey = selectedBookingService;
+  const statusEl = document.getElementById('bookingStatus');
+
+  if(!name || !job || !phone || !serviceKey){
+    statusEl.style.color = '#ff8f8f';
+    statusEl.textContent = '⚠️ من فضلك املأ كل الحقول واختار الخدمة.';
+    return;
+  }
+  if(selectedBookingPackage === null){
+    statusEl.style.color = '#ff8f8f';
+    statusEl.textContent = '⚠️ من فضلك اختار الباقة المناسبة لك.';
+    return;
+  }
+
+  const svc = BOOKING_SERVICES[serviceKey];
+  const pkg = svc.packages[selectedBookingPackage];
+  const btn = document.getElementById('bookingSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'جاري إرسال الطلب...';
+  statusEl.style.color = 'var(--text-mid)';
+  statusEl.textContent = '';
+
+  const summary =
+`📩 طلب حجز جديد من موقع Creatix Studio
+
+👤 الاسم: ${name}
+💼 الوظيفة: ${job}
+📱 الهاتف: ${phone}
+🎨 الخدمة: ${svc.name}
+📦 الباقة: ${pkg.name} — ${pkg.price}`;
+
+  sendBookingToTelegram(summary).then(ok => {
+    if(ok){
+      statusEl.style.color = 'var(--lilac-2)';
+      statusEl.textContent = '✅ تم إرسال طلبك بنجاح! هيتواصل معاك فريقنا في أقرب وقت.';
+      resetBookingForm();
+    } else {
+      // Fallback: pre-fill the request on WhatsApp so no lead is lost before the Telegram bot is ready
+      statusEl.style.color = 'var(--lilac-2)';
+      statusEl.textContent = '📲 تم تجهيز طلبك، كمّل الإرسال من واتساب اللي هيتفتحلك دلوقتي.';
+      window.open(`https://wa.me/201223093974?text=${encodeURIComponent(summary)}`, '_blank');
+      resetBookingForm();
+    }
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'احجز طلبك الآن';
+  });
 }
 
 /* ============================================
