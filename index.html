@@ -2980,16 +2980,23 @@ let geminiHistory = []; // [{role:'user'|'model', parts:[{text}]}]
 
 async function callGemini(userText){
   geminiHistory.push({ role:'user', parts:[{ text:userText }] });
-  const res = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(GEMINI_ENDPOINT, {
     method:'POST',
-    headers:{ 'Content-Type':'application/json' },
+    headers:{
+      'Content-Type':'application/json',
+      'x-goog-api-key': GEMINI_API_KEY
+    },
     body: JSON.stringify({
       system_instruction: { parts:[{ text: CREATIX_KNOWLEDGE }] },
       contents: geminiHistory,
       generationConfig:{ temperature:0.7, maxOutputTokens:400 }
     })
   });
-  if(!res.ok) throw new Error('Gemini request failed: ' + res.status);
+  if(!res.ok){
+    const errBody = await res.text().catch(()=> '');
+    console.error('Gemini request failed:', res.status, errBody);
+    throw new Error('Gemini request failed: ' + res.status);
+  }
   const data = await res.json();
   const reply = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('').trim();
   if(!reply) throw new Error('Empty Gemini response');
