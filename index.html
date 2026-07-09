@@ -1093,26 +1093,41 @@ footer::before{
 }
 .chat-window{
   position:fixed; inset:0; z-index:400;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(157,78,221,0.16), transparent 45%),
-    radial-gradient(circle at 88% 100%, rgba(199,125,255,0.12), transparent 45%),
-    linear-gradient(180deg, rgba(16,0,43,0.99), var(--ink-0) 60%);
-  overflow:hidden;
-  display:none; flex-direction:column;
-  opacity:0; transform:translateY(14px) scale(0.99); pointer-events:none;
-  transition:opacity .3s var(--ease), transform .3s var(--ease);
+  background:rgba(8,0,20,0.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  display:none; align-items:center; justify-content:center; padding:32px;
+  opacity:0; transition:opacity .3s var(--ease);
 }
-.chat-window.show{display:flex; opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+.chat-window.show{display:flex; opacity:1; pointer-events:auto;}
 body.chat-page-lock{overflow:hidden;}
 .chat-page-inner{
-  width:100%; max-width:760px; margin:0 auto; height:100%;
-  display:flex; flex-direction:column; min-height:0;
+  width:min(880px, 100%); height:min(86vh, 840px); margin:0 auto;
+  display:flex; flex-direction:column; min-height:0; position:relative;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(157,78,221,0.20), transparent 45%),
+    radial-gradient(circle at 88% 100%, rgba(199,125,255,0.14), transparent 45%),
+    linear-gradient(180deg, rgba(36,0,70,0.98), var(--ink-0) 65%);
+  border:1px solid var(--line-hi); border-radius:28px; overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(224,170,255,0.06) inset;
+  transform:translateY(24px) scale(0.97); opacity:0;
+  transition:transform .34s var(--ease), opacity .34s var(--ease);
+}
+.chat-window.show .chat-page-inner{transform:translateY(0) scale(1); opacity:1;}
+@media(max-width:640px){
+  .chat-window{padding:0;}
+  .chat-page-inner{width:100%; height:100%; border-radius:0; border:none;}
 }
 .chat-head{
-  position:relative; background:linear-gradient(135deg, var(--violet-2), var(--violet-1)); padding:16px 22px;
-  display:flex; align-items:center; gap:13px; overflow:hidden; flex-shrink:0;
+  position:relative; background:linear-gradient(135deg, var(--violet-2), var(--violet-1)); padding:20px 24px;
+  display:flex; align-items:center; gap:15px; overflow:hidden; flex-shrink:0;
   border-bottom:1px solid var(--line-hi);
 }
+.chat-head::before{
+  content:''; position:absolute; width:180px; height:180px; border-radius:50%;
+  background:radial-gradient(circle, rgba(224,170,255,0.35), transparent 70%);
+  top:-90px; inset-inline-end:-40px; filter:blur(6px); animation:headBlobDrift 9s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes headBlobDrift{0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-14px,10px) scale(1.15);}}
 .chat-head::after{
   content:''; position:absolute; left:0; right:0; bottom:0; height:2px;
   background:linear-gradient(90deg, transparent, var(--lilac-1), var(--violet-4), var(--lilac-1), transparent);
@@ -1120,25 +1135,37 @@ body.chat-page-lock{overflow:hidden;}
 }
 @keyframes headSheen{0%{background-position:200% 0;} 100%{background-position:-200% 0;}}
 .chat-head .av{
-  width:42px; height:42px; border-radius:50%; flex-shrink:0; position:relative;
+  width:48px; height:48px; border-radius:50%; flex-shrink:0; position:relative;
   background:linear-gradient(135deg, var(--violet-4), var(--lilac-1));
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 0 0 3px rgba(255,255,255,0.12);
+  box-shadow:0 0 0 3px rgba(255,255,255,0.14);
+  animation:avatarFloat 3.4s ease-in-out infinite;
 }
-.chat-head .av svg{width:22px; height:22px; color:#fff;}
+.chat-head .av::after{
+  content:''; position:absolute; inset:-6px; border-radius:50%; border:1.5px solid rgba(224,170,255,0.5);
+  animation:avatarRing 2.4s ease-out infinite;
+}
+@keyframes avatarFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);}}
+@keyframes avatarRing{0%{transform:scale(0.85); opacity:0.9;} 100%{transform:scale(1.35); opacity:0;}}
+.chat-head .av svg{width:24px; height:24px; color:#fff; position:relative; z-index:1;}
 .chat-head .info{flex-grow:1; min-width:0;}
-.chat-head .name{font-weight:700; font-size:0.98rem; font-family:var(--display);}
-.chat-head .status{font-size:0.75rem; color:var(--lilac-2); display:flex; align-items:center; gap:6px; margin-top:2px;}
+.chat-head .name{
+  font-weight:800; font-size:1.08rem; font-family:var(--display);
+  background:linear-gradient(90deg, var(--text-hi), var(--lilac-2));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.chat-head .status{font-size:0.78rem; color:var(--lilac-2); display:flex; align-items:center; gap:6px; margin-top:3px;}
 .chat-head .status::before{content:''; width:6px; height:6px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 0 rgba(74,222,128,0.6); animation:dotPing 1.8s ease-out infinite;}
 @keyframes dotPing{0%{box-shadow:0 0 0 0 rgba(74,222,128,0.55);} 70%{box-shadow:0 0 0 6px rgba(74,222,128,0);} 100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
 .chat-head button{
-  background:rgba(255,255,255,0.08); border:none; color:#fff; font-size:1.05rem; opacity:0.85; flex-shrink:0;
-  width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  transition:background .2s, opacity .2s, transform .2s;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#fff; font-size:1rem; opacity:0.9; flex-shrink:0;
+  width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  transition:background .2s, opacity .2s, transform .2s, border-color .2s;
 }
-.chat-head button:hover{background:rgba(255,255,255,0.18); opacity:1; transform:rotate(90deg);}
+.chat-head button:hover{background:rgba(255,255,255,0.2); opacity:1; transform:rotate(90deg); border-color:var(--lilac-1);}
 .chat-body{
   flex-grow:1; overflow-y:auto; padding:28px 20px; display:flex; flex-direction:column; gap:16px; min-height:0;
+  scrollbar-width:thin; scrollbar-color:var(--violet-3) transparent;
 }
 .chat-body::-webkit-scrollbar{width:5px;}
 .chat-body::-webkit-scrollbar-thumb{background:var(--violet-3); border-radius:10px;}
@@ -1211,7 +1238,10 @@ body.chat-page-lock{overflow:hidden;}
 @media (prefers-reduced-motion: reduce){
   .chat-launcher{animation:none;}
   .chat-head::after{animation:none;}
+  .chat-head::before{animation:none;}
   .chat-head .status::before{animation:none;}
+  .chat-head .av{animation:none;}
+  .chat-head .av::after{animation:none;}
 }
 
 /* ============================================
@@ -2885,7 +2915,7 @@ function hideTyping(){
    ============================================ */
 // مفتاح Gemini API — مقيّد على دومين الموقع فقط (HTTP referrer restriction) من Google Cloud Console
 const GEMINI_API_KEY = 'AQ.Ab8RN6JSQpZR3nRTfiR_e1g8PeqdhGqCR8Rqm7_py6HkfquF7A';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 // قاعدة المعرفة الكاملة عن Creatix Studio — بتتبعت كـ system instruction لجيميني
