@@ -1092,18 +1092,26 @@ footer::before{
   pointer-events:none; border:2px solid var(--ink-0); z-index:2;
 }
 .chat-window{
-  position:fixed; top:100px; left:26px; z-index:120; width:378px; max-width:92vw; height:560px; max-height:78vh;
-  background:linear-gradient(180deg, rgba(36,0,70,0.97), rgba(16,0,43,0.99));
-  border:1px solid var(--line-hi); border-radius:24px; overflow:hidden;
-  display:none; flex-direction:column; box-shadow:0 25px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(224,170,255,0.06) inset;
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-  opacity:0; transform:translateY(18px) scale(0.96); pointer-events:none;
-  transition:opacity .28s var(--ease), transform .28s var(--ease);
+  position:fixed; inset:0; z-index:400;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(157,78,221,0.16), transparent 45%),
+    radial-gradient(circle at 88% 100%, rgba(199,125,255,0.12), transparent 45%),
+    linear-gradient(180deg, rgba(16,0,43,0.99), var(--ink-0) 60%);
+  overflow:hidden;
+  display:none; flex-direction:column;
+  opacity:0; transform:translateY(14px) scale(0.99); pointer-events:none;
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
 }
 .chat-window.show{display:flex; opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+body.chat-page-lock{overflow:hidden;}
+.chat-page-inner{
+  width:100%; max-width:760px; margin:0 auto; height:100%;
+  display:flex; flex-direction:column; min-height:0;
+}
 .chat-head{
-  position:relative; background:linear-gradient(135deg, var(--violet-2), var(--violet-1)); padding:18px 20px;
-  display:flex; align-items:center; gap:13px; overflow:hidden;
+  position:relative; background:linear-gradient(135deg, var(--violet-2), var(--violet-1)); padding:16px 22px;
+  display:flex; align-items:center; gap:13px; overflow:hidden; flex-shrink:0;
+  border-bottom:1px solid var(--line-hi);
 }
 .chat-head::after{
   content:''; position:absolute; left:0; right:0; bottom:0; height:2px;
@@ -1130,8 +1138,7 @@ footer::before{
 }
 .chat-head button:hover{background:rgba(255,255,255,0.18); opacity:1; transform:rotate(90deg);}
 .chat-body{
-  flex-grow:1; overflow-y:auto; padding:20px 18px; display:flex; flex-direction:column; gap:14px;
-  background-image:radial-gradient(circle at 15% 8%, rgba(157,78,221,0.10), transparent 45%), radial-gradient(circle at 85% 90%, rgba(199,125,255,0.08), transparent 45%);
+  flex-grow:1; overflow-y:auto; padding:28px 20px; display:flex; flex-direction:column; gap:16px; min-height:0;
 }
 .chat-body::-webkit-scrollbar{width:5px;}
 .chat-body::-webkit-scrollbar-thumb{background:var(--violet-3); border-radius:10px;}
@@ -1159,7 +1166,9 @@ footer::before{
   border-bottom-right-radius:5px; font-weight:500;
 }
 .msg-time{font-size:0.68rem; color:var(--text-low); margin-top:5px; padding:0 4px;}
-.chat-quick{display:flex; gap:8px; flex-wrap:wrap; padding:0 18px 14px;}
+.chat-quick-wrap{padding:0 20px 16px; flex-shrink:0;}
+.chat-quick-label{font-size:0.8rem; color:var(--text-mid); margin-bottom:10px; padding:0 2px;}
+.chat-quick{display:flex; gap:8px; flex-wrap:wrap;}
 .chip{
   background:rgba(157,78,221,0.14); border:1px solid var(--line-hi); color:var(--lilac-2);
   font-size:0.78rem; padding:8px 14px; border-radius:100px; white-space:nowrap;
@@ -1167,7 +1176,10 @@ footer::before{
   transition:background .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
 }
 .chip:hover{background:rgba(157,78,221,0.32); transform:translateY(-2px); box-shadow:0 6px 16px rgba(157,78,221,0.35);}
-.chat-input-row{display:flex; gap:9px; padding:15px 16px; border-top:1px solid var(--line); align-items:center;}
+.chat-input-row{
+  display:flex; gap:9px; padding:16px 20px 20px; align-items:center; flex-shrink:0;
+  border-top:1px solid var(--line); background:rgba(16,0,43,0.55); backdrop-filter:blur(10px);
+}
 .chat-input-row input{
   flex-grow:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:#fff;
   padding:12px 17px; border-radius:100px; font-size:0.88rem;
@@ -1191,7 +1203,10 @@ footer::before{
 @keyframes bounce{0%,60%,100%{transform:translateY(0); opacity:0.5;} 30%{transform:translateY(-5px); opacity:1;}}
 
 @media(max-width:480px){
-  .chat-window{width:auto; max-width:calc(100vw - 20px); border-radius:20px;}
+  .chat-head{padding:14px 16px;}
+  .chat-body{padding:20px 14px;}
+  .chat-quick-wrap{padding:0 14px 14px;}
+  .chat-input-row{padding:12px 14px 16px;}
 }
 @media (prefers-reduced-motion: reduce){
   .chat-launcher{animation:none;}
@@ -1726,7 +1741,7 @@ footer::before{
       <!-- Login prompt (when not logged in) -->
       <div class="comments-auth-bar" id="commentsAuthBar" style="display:none;">
         <span style="color:var(--text-mid); font-size:0.92rem;">👆 سجّل دخولك من أيقونة البروفايل في الأعلى عشان تكتب تعليق</span>
-        <button class="btn-email-login" onclick="document.getElementById('profileBtn').click(); document.getElementById('profileCard').scrollIntoView({behavior:'smooth', block:'nearest'})">تسجيل الدخول ←</button>
+        <button class="btn-email-login" onclick="document.getElementById('profileBtn').click(); SmoothScroll.toElement(document.getElementById('profileCard'))">تسجيل الدخول ←</button>
       </div>
 
       <!-- Comment form (shown when logged in) -->
@@ -1963,28 +1978,33 @@ footer::before{
 </button>
 
 <div class="chat-window" id="chatWindow">
-  <div class="chat-head">
-    <div class="av">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="4"></rect><path d="M12 7V4"></path><circle cx="12" cy="3" r="1.2" fill="currentColor" stroke="none"></circle><circle cx="9" cy="13" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="15" cy="13" r="1.3" fill="currentColor" stroke="none"></circle><path d="M9 17h6"></path></svg>
+  <div class="chat-page-inner">
+    <div class="chat-head">
+      <div class="av">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="4"></rect><path d="M12 7V4"></path><circle cx="12" cy="3" r="1.2" fill="currentColor" stroke="none"></circle><circle cx="9" cy="13" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="15" cy="13" r="1.3" fill="currentColor" stroke="none"></circle><path d="M9 17h6"></path></svg>
+      </div>
+      <div class="info">
+        <div class="name">Creatix Bot</div>
+        <div class="status">متصل الآن — مساعد Creatix الذكي</div>
+      </div>
+      <button onclick="toggleChat(false)" aria-label="إغلاق الشات">✕</button>
     </div>
-    <div class="info">
-      <div class="name">Creatix Bot</div>
-      <div class="status">متصل الآن — مساعد Creatix الذكي</div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-quick-wrap" id="chatQuickWrap">
+      <div class="chat-quick-label" id="chatQuickLabel">مش عارف تبدأ بإيه؟ جرّب واحدة من دول 👇</div>
+      <div class="chat-quick" id="chatQuick">
+        <button class="chip" onclick="botSuggest('services')">🎨 إيه الخدمات المتاحة؟</button>
+        <button class="chip" onclick="botSuggest('price')">💰 الأسعار بتتحدد إزاي؟</button>
+        <button class="chip" onclick="botSuggest('time')">⏰ مدة التسليم قد إيه؟</button>
+        <button class="chip" onclick="botSuggest('contact')">📞 عايز أتواصل معاكم</button>
+      </div>
     </div>
-    <button onclick="toggleChat(false)" aria-label="إغلاق الشات">✕</button>
-  </div>
-  <div class="chat-body" id="chatBody"></div>
-  <div class="chat-quick" id="chatQuick">
-    <button class="chip" onclick="botQuick('services')">🎨 الخدمات</button>
-    <button class="chip" onclick="botQuick('price')">💰 الأسعار</button>
-    <button class="chip" onclick="botQuick('time')">⏰ التسليم</button>
-    <button class="chip" onclick="botQuick('contact')">📞 تواصل</button>
-  </div>
-  <div class="chat-input-row">
-    <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter')sendChat()">
-    <button class="chat-send" onclick="sendChat()" aria-label="إرسال">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-    </button>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()" aria-label="إرسال">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2269,6 +2289,111 @@ footer::before{
 
 <script>
 /* ============================================
+   SMOOTH SCROLL ENGINE — inertia-based, احترافي
+   ============================================ */
+const SmoothScroll = (function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isFinePointer = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const NO_INTERCEPT_SELECTOR = '.chat-body, .chat-window, .dash-overlay, .service-page-overlay, .custom-select-menu, .export-box, textarea, [data-native-scroll]';
+  const EASE = 0.15;            // كل ما قل الرقم، كل ما السكرول بقى أنعم وأبطأ في اللحاق
+  const WHEEL_SPEED = 1;        // معامل حساسية عجلة الماوس
+
+  let current = window.scrollY || 0;
+  let target = current;
+  let programmatic = false;
+  let rafId = null;
+  let enabled = !reduceMotion && isFinePointer;
+
+  function maxScroll(){
+    return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  }
+  function clamp(v){
+    return Math.min(Math.max(v, 0), maxScroll());
+  }
+  function loop(){
+    current += (target - current) * EASE;
+    if(Math.abs(target - current) < 0.5){ current = target; }
+    programmatic = true;
+    window.scrollTo(0, current);
+    programmatic = false;
+    rafId = requestAnimationFrame(loop);
+  }
+  function start(){
+    if(rafId) return;
+    current = window.scrollY;
+    target = current;
+    rafId = requestAnimationFrame(loop);
+  }
+  function stop(){
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  }
+  function normalizeDelta(e){
+    let d = e.deltaY;
+    if(e.deltaMode === 1) d *= 18;              // وضع السطور (بعض الفئران)
+    else if(e.deltaMode === 2) d *= window.innerHeight; // وضع الصفحة الكاملة
+    return d;
+  }
+  function onWheel(e){
+    if(!enabled) return;
+    if(e.target.closest(NO_INTERCEPT_SELECTOR)) return; // سيبها تتصرف طبيعي جوه العناصر اللي ليها سكرول خاص
+    e.preventDefault();
+    target = clamp(target + normalizeDelta(e) * WHEEL_SPEED);
+  }
+  function onNativeScroll(){
+    if(!enabled || programmatic) return;
+    // نتجاهل الفروق الصغيرة (دي ناتجة من تحديثاتنا احنا)، ونزامن بس لو حصلت قفزة كبيرة
+    // حقيقية زي كيبورد Home/End أو سحب سكرول بار
+    const diff = Math.abs(window.scrollY - current);
+    if(diff > 60){
+      current = window.scrollY;
+      target = current;
+    }
+  }
+  function onResize(){
+    target = clamp(target);
+  }
+  // يستخدمها أي كود تاني في الموقع بدل window.scrollTo(...{behavior:'smooth'})
+  function to(y, opts){
+    opts = opts || {};
+    const val = clamp(y);
+    if(!enabled){
+      window.scrollTo({top: val, behavior: reduceMotion ? 'auto' : 'smooth'});
+      current = target = val;
+      return;
+    }
+    target = val;
+  }
+  function toElement(el, offset){
+    if(!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY + (offset || 0);
+    to(y);
+  }
+
+  if(enabled){
+    window.addEventListener('wheel', onWheel, {passive:false});
+    window.addEventListener('scroll', onNativeScroll, {passive:true});
+    window.addEventListener('resize', onResize);
+    document.documentElement.style.scrollBehavior = 'auto';
+    start();
+  }
+
+  return { to, toElement, get enabled(){ return enabled; } };
+})();
+
+// اعتراض كل روابط التنقل الداخلي (#about, #services...) عشان تستخدم نفس السكرول السلس
+document.addEventListener('click', function(e){
+  const a = e.target.closest('a[href^="#"]');
+  if(!a) return;
+  const id = a.getAttribute('href').slice(1);
+  if(!id) return;
+  const el = document.getElementById(id);
+  if(!el) return;
+  e.preventDefault();
+  SmoothScroll.toElement(el, -10);
+  if(history.pushState) history.pushState(null, '', '#' + id);
+});
+
+/* ============================================
    DATA LAYER — localStorage backed
    ============================================ */
 const LS_KEYS = { works:'creatix_works', reviews:'creatix_reviews', bot:'creatix_bot_texts' };
@@ -2471,7 +2596,7 @@ function orderThisService(){
   setTimeout(()=>{
     if(typeof chooseService === 'function' && svc) chooseService(key, svc.label);
     const bookingSection = document.getElementById('booking');
-    if(bookingSection) bookingSection.scrollIntoView({behavior:'smooth', block:'start'});
+    if(bookingSection) SmoothScroll.toElement(bookingSection, -16);
   }, 320);
 }
 document.addEventListener('keydown', e=>{
@@ -2617,19 +2742,7 @@ function setLauncherPos(x, y, save){
   }
   return c;
 }
-function repositionChatWindow(){
-  const rect = chatLauncher.getBoundingClientRect();
-  const win = document.getElementById('chatWindow');
-  const winW = Math.min(360, window.innerWidth * 0.9);
-  const winH = Math.min(520, window.innerHeight * 0.75);
-  let left = rect.left;
-  let top = rect.top - winH - 14;
-  if(top < 10){ top = rect.bottom + 14; }
-  if(left + winW > window.innerWidth - 10){ left = window.innerWidth - winW - 10; }
-  if(left < 10){ left = 10; }
-  win.style.left = left + 'px';
-  win.style.top = top + 'px';
-}
+
 
 // restore saved position, or default to bottom-left
 (function initLauncherPos(){
@@ -2711,13 +2824,13 @@ chatLauncher.addEventListener('click', (e)=>{
     e.preventDefault();
     return;
   }
-  repositionChatWindow();
   toggleChat();
 });
 function toggleChat(force){
   const win = document.getElementById('chatWindow');
   const show = force !== undefined ? force : !win.classList.contains('show');
   win.classList.toggle('show', show);
+  document.body.classList.toggle('chat-page-lock', show);
   if(show && !chatOpened){
     chatOpened = true;
     document.getElementById('chatBadge').style.display = 'none';
@@ -2767,28 +2880,130 @@ function hideTyping(){
   const t = document.getElementById('typingIndicator');
   if(t) t.remove();
 }
-function botQuick(key){
-  const map = {services:'الخدمات', price:'الأسعار', time:'مدة التسليم', contact:'تواصل'};
-  addUserMsg(map[key]);
-  lastBotTopic = key;
+/* ============================================
+   GEMINI AI INTEGRATION
+   ============================================ */
+// مفتاح Gemini API — مقيّد على دومين الموقع فقط (HTTP referrer restriction) من Google Cloud Console
+const GEMINI_API_KEY = 'AQ.Ab8RN6JSQpZR3nRTfiR_e1g8PeqdhGqCR8Rqm7_py6HkfquF7A';
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+// قاعدة المعرفة الكاملة عن Creatix Studio — بتتبعت كـ system instruction لجيميني
+const CREATIX_KNOWLEDGE = `
+أنت "Creatix Bot"، المساعد الذكي الرسمي لفريق Creatix Studio على موقعهم الإلكتروني. مهمتك الرد على استفسارات العملاء بأسلوب احترافي وودود وسريع الاستجابة، باللهجة المصرية العامية البسيطة، وبإجابات مختصرة ومباشرة (تجنب الفقرات الطويلة إلا لو العميل طلب تفاصيل أكتر).
+
+=== نبذة عن الفريق ===
+Creatix Studio فريق إبداعي متخصص في الخدمات الإعلانية والتعليمية والتسويق الرقمي، بيقدم حلول متكاملة تساعد الأفراد والمؤسسات على بناء هوية قوية وحضور احترافي رقمي. الشعار: "Designed to be different. 🔥"
+الرؤية: يبقى الشريك الإبداعي الأول في المجال التعليمي والرقمي بالوطن العربي.
+الرسالة: تمكين المعلمين وصناع المحتوى والمؤسسات التعليمية وأصحاب المشاريع من الوصول لجمهورهم باحترافية عبر تصميم إبداعي وتسويق فعال وحلول تقنية متكاملة.
+
+الفئة المستهدفة: المعلمون، أصحاب السناتر التعليمية، الأكاديميات والمراكز التعليمية، صناع المحتوى، البراندات الناشئة، أصحاب المشاريع الصغيرة والمتوسطة.
+
+=== الخدمات ===
+قسم التصميم: شعارات، هوية بصرية كاملة، منشورات سوشيال ميديا، بنرات إعلانية، مطبوعات، كروت أعمال، جميع المواد التعليمية، شهادات تقدير، كروت متابعة طلاب، أغلفة مذكرات تعليمية، وأي تصميم تعليمي حسب الطلب.
+قسم المواقع والتقنيات: تصميم مواقع إلكترونية، إنشاء منصات تعليمية، تطوير صفحات هبوط (Landing Pages).
+قسم الفيديو: مونتاج فيديوهات تعليمية، مونتاج Reels تعليمية، مونتاج بسيط احترافي للسوشيال ميديا.
+قسم التسويق: إدارة صفحات تواصل اجتماعي (خطة تسويقية + تصميم منشورات + كتابة محتوى + جدولة + إدارة الصفحة + الرد على العملاء عند الاتفاق + إدارة حملات ممولة + الالتزام بالهوية البصرية + متابعة الأداء)، إعداد خطط تسويقية، كتابة محتوى.
+خدمات إضافية: استشارة مجانية قبل بدء المشروع، إمكانية حجز اجتماع مع Team Leader، متابعة بعد التسليم، دعم فني متواصل، تنفيذ التعديلات باحترافية.
+
+=== الأسعار ===
+لا توجد أسعار ثابتة — كل مشروع بيتقيّم على حسب متطلبات العميل وحجم الشغل والمدة الزمنية، وبيتقدَّم عرض سعر مخصص لكل عميل. لو حد سأل عن السعر، اشرحله المبدأ ده وشجّعه يتواصل معانا (واتساب أو فيسبوك) عشان ياخد عرض سعر دقيق، ومتخترعش أرقام.
+طرق الدفع المتاحة: Orange Cash، أو الدفع نقدًا (Cash) في مقابلة شخصية مع Team Leader.
+
+=== مدة التنفيذ التقريبية ===
+- تصميم اللوجو: من يوم لـ يومين.
+- التصميمات التعليمية (شهادات، كروت متابعة، أغلفة مذكرات، وغيرها): من يوم لـ يومين.
+- تصميمات السوشيال ميديا والمطبوعات والهوية البصرية والمونتاج: غالبًا من يوم لـ يومين حسب حجم المشروع.
+- تصميم المواقع الإلكترونية: المدة بتتحدد حسب حجم ومتطلبات المشروع.
+- إنشاء المنصات التعليمية: من أسبوع لأسبوعين.
+ملحوظة: المدة ممكن تختلف حسب حجم المشروع وعدد التعديلات المطلوبة.
+
+=== بيانات التواصل ===
+- الموقع الرسمي: https://creatixstudio1.github.io/
+- صفحة فيسبوك الرسمية: https://www.facebook.com/profile.php?id=61582261975354
+- واتساب: https://wa.me/201223093974
+- Discord: https://discord.gg/uugVFvEMb
+- البريد الإلكتروني: creatixstudio1@gmail.com
+- رقم Team Leader: 01223093974
+- صفحة فيسبوك الخاصة بـ Team Leader: https://www.facebook.com/DeOPAIDA8
+- مواعيد العمل: يوميًا من 10 صباحًا لـ 12 بالليل.
+- اللغات المدعومة: العربية (أساسية) والإنجليزية.
+- طلب الخدمة: من الموقع مباشرة، أو واتساب، أو إيميل، أو صفحة فيسبوك.
+- حجز اجتماع: ممكن العميل يحجز ميعاد مع Team Leader لاستشارة مجانية ومناقشة تفاصيل المشروع قبل التنفيذ.
+- أماكن المقابلات الشخصية (الإسكندرية فقط): ميدان الساعة، سيدي بشر، السيوف، الفلكي، صلاح الدين، شارع أحمد أبو سليمان، باكوس. (اذكرها بس لو العميل سأل عن مقابلة شخصية أو مكان في الإسكندرية).
+
+=== معلومات إضافية ===
+- سرية المعلومات: بيتم الحفاظ على سرية كل ملفات وبيانات العميل ومتتشاركش من غير موافقته.
+- الأعمال السابقة: لو العميل طلب يشوف أعمال سابقة، قولّه هيتبعتله نماذج من أفضل الأعمال المناسبة لنوع الخدمة اللي طالبها، وحوّله للتواصل المباشر لإرسالها.
+- الباقات: فيه باقات حصرية متاحة على الموقع الرسمي، وجّه العميل يشوفها هناك.
+- مميزات الفريق: سرعة تنفيذ، جودة عالية، تخصص في المجال التعليمي والرقمي، أسعار تنافسية، تواصل سريع، دعم فني بعد التسليم، الالتزام بالمواعيد والهوية البصرية، حلول مخصصة مش قوالب جاهزة، التركيز على نتائج حقيقية.
+
+=== تعليمات مهمة ===
+- رد دايمًا باللهجة المصرية، بأسلوب ودود واحترافي ومختصر.
+- استخدم المعلومات اللي فوق بس، ولو سؤال العميل بره نطاق معرفتك أو محتاج تفاصيل دقيقة (زي سعر نهائي أو تفاصيل عقد)، وجّهه بلطف للتواصل مع الفريق عبر واتساب أو فيسبوك أو الإيميل.
+- متختلقش معلومات مش موجودة فوق (زي أرقام أسعار محددة).
+- لو حد سأل حاجة مش ليها علاقة بـ Creatix Studio خالص، ردّ بلطف إنك مساعد Creatix ومتخصص في خدمات الفريق بس.
+- خلي الردود قصيرة ومركزة (2-4 جمل غالبًا)، واستخدم إيموجي بشكل خفيف ومناسب لو حبيت.
+`.trim();
+
+let geminiHistory = []; // [{role:'user'|'model', parts:[{text}]}]
+
+async function callGemini(userText){
+  geminiHistory.push({ role:'user', parts:[{ text:userText }] });
+  const res = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts:[{ text: CREATIX_KNOWLEDGE }] },
+      contents: geminiHistory,
+      generationConfig:{ temperature:0.7, maxOutputTokens:400 }
+    })
+  });
+  if(!res.ok) throw new Error('Gemini request failed: ' + res.status);
+  const data = await res.json();
+  const reply = data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('').trim();
+  if(!reply) throw new Error('Empty Gemini response');
+  geminiHistory.push({ role:'model', parts:[{ text: reply }] });
+  // منع الـ history من الزيادة اللانهائية
+  if(geminiHistory.length > 30) geminiHistory = geminiHistory.slice(-30);
+  return reply;
+}
+
+function hideStartSuggestions(){
+  const wrap = document.getElementById('chatQuickWrap');
+  if(wrap) wrap.style.display = 'none';
+}
+
+async function handleUserTurn(text){
+  hideStartSuggestions();
+  addUserMsg(text);
   showTyping();
-  setTimeout(()=>{
+  try{
+    const reply = await callGemini(text);
     hideTyping();
-    addBotMsg(BOT_TEXTS[key] || BOT_TEXTS.services);
-  }, 650);
+    addBotMsg(reply);
+  }catch(err){
+    hideTyping();
+    // خطة بديلة: لو الـ API فشل (شبكة/كوتا)، استخدم محرك الردود الجاهزة كـ fallback
+    addBotMsg(matchBotReply(text));
+  }
+}
+
+function botSuggest(key){
+  const map = {
+    services:'إيه الخدمات المتاحة عندكم؟',
+    price:'الأسعار بتتحدد إزاي؟',
+    time:'مدة التسليم بتاخد قد إيه؟',
+    contact:'عايز أتواصل معاكم، إزاي؟'
+  };
+  handleUserTurn(map[key] || map.services);
 }
 function sendChat(){
   const input = document.getElementById('chatInput');
   const val = input.value.trim();
   if(!val) return;
-  addUserMsg(val);
   input.value = '';
-  showTyping();
-  const delay = Math.min(1400, Math.max(550, val.length * 28));
-  setTimeout(()=>{
-    hideTyping();
-    addBotMsg(matchBotReply(val));
-  }, delay);
+  handleUserTurn(val);
 }
 
 /* ============================================
@@ -3733,7 +3948,7 @@ renderProfileCard();
   update();
   if(topBtn){
     topBtn.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      SmoothScroll.to(0);
     });
   }
 })();
