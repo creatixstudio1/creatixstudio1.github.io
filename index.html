@@ -1049,6 +1049,38 @@ footer::before{
 .comments-empty .ic{ font-size:3rem; margin-bottom:14px;}
 .comments-loading{ text-align:center; padding:30px; color:var(--text-low);}
 
+/* ============================================
+   CLIENTS LOGO WALL
+   ============================================ */
+#clients{ padding:80px 0; border-top:1px solid var(--line); overflow:hidden;}
+.logo-marquee{
+  position:relative; overflow:hidden; padding:10px 0;
+  -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  mask-image:linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+.logo-track{
+  display:flex; align-items:center; gap:20px; width:max-content;
+  animation:logoScroll 28s linear infinite;
+}
+.logo-marquee:hover .logo-track{ animation-play-state:paused;}
+@keyframes logoScroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+[dir="rtl"] .logo-track{ animation-name:logoScrollRTL; }
+@keyframes logoScrollRTL{ from{transform:translateX(0);} to{transform:translateX(50%);} }
+.logo-chip{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
+  border:1px solid var(--line); border-radius:16px; padding:22px 30px;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+  min-width:150px; min-height:110px;
+}
+.logo-chip:hover{
+  transform:translateY(-4px); border-color:var(--line-hi);
+  background:linear-gradient(165deg, rgba(90,24,154,0.55), rgba(36,0,70,0.4));
+}
+.logo-chip img{ max-height:64px; max-width:130px; object-fit:contain; display:block; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.35)); transition:transform .3s var(--ease);}
+.logo-chip:hover img{ transform:scale(1.06);}
+.clients-note{ text-align:center; color:var(--text-low); font-size:0.85rem; margin-top:26px;}
+
 /* Auth modal (email sign in / sign up) */
 .auth-tabs{ display:flex; gap:0; margin-bottom:24px; border-radius:12px; overflow:hidden; border:1px solid var(--line);}
 .auth-tab{
@@ -1498,7 +1530,7 @@ body.chat-page-lock{overflow:hidden;}
     <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
     <a href="#booking" onclick="closeMenu()">احجز خدمتك</a>
     <a href="#testimonials" onclick="closeMenu()">آراء العملاء</a>
-    <a href="#comments" onclick="closeMenu()">التعليقات</a>
+    <a href="#clients" onclick="closeMenu()">عملاؤنا</a>
     <a href="#contact" onclick="closeMenu()">تواصل معنا</a>
     <a href="#contact" class="nav-cta" onclick="closeMenu()">ابدأ مشروعك</a>
   </nav>
@@ -1615,6 +1647,13 @@ body.chat-page-lock{overflow:hidden;}
           </div>
           <h3 class="team-name">عمر ابراهيم عيسى</h3>
           <span class="team-role">Code Programmer</span>
+        </div>
+        <div class="team-card">
+          <div class="team-photo" aria-label="Graphic Designer & Social Media Marketer">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4l1.4-1.4M17 7l1.4-1.4"></path></svg>
+          </div>
+          <h3 class="team-name">محمد ماضي</h3>
+          <span class="team-role">Graphic Designer &amp; Social Media Marketer</span>
         </div>
       </div>
     </div>
@@ -1759,34 +1798,33 @@ body.chat-page-lock{overflow:hidden;}
     </div>
   </section>
 
-  <!-- ============ COMMENTS ============ -->
-  <section id="comments">
+  <!-- ============ CLIENTS LOGO WALL ============ -->
+  <!-- لاستبدال أي اسم بلوجو حقيقي: احذف <span class="logo-badge">..</span> وحط <img src="رابط اللوجو" alt="اسم العميل"> بدلها -->
+  <section id="clients">
     <div class="wrap">
       <div class="section-head">
-        <span class="section-eyebrow">المجتمع</span>
-        <h2 class="section-title">شارك رأيك 💬</h2>
-        <p class="section-desc">سجّل دخولك وشاركنا رأيك أو تجربتك مع Creatix Studio.</p>
+        <span class="section-eyebrow">عملاؤنا</span>
+        <h2 class="section-title">وثقوا فينا 🤝</h2>
+        <p class="section-desc">جهات ومؤسسات اشتغلت مع فريق Creatix Studio وطلعت بهوية بصرية تفرق.</p>
       </div>
-
-      <!-- Login prompt (when not logged in) -->
-      <div class="comments-auth-bar" id="commentsAuthBar" style="display:none;">
-        <span style="color:var(--text-mid); font-size:0.92rem;">👆 سجّل دخولك من أيقونة البروفايل في الأعلى عشان تكتب تعليق</span>
-        <button class="btn-email-login" onclick="document.getElementById('profileBtn').click(); SmoothScroll.toElement(document.getElementById('profileCard'))">تسجيل الدخول ←</button>
-      </div>
-
-      <!-- Comment form (shown when logged in) -->
-      <div class="comment-form" id="commentForm" style="display:none;">
-        <textarea id="commentText" placeholder="شارك رأيك هنا..." maxlength="500" oninput="updateCharCount()"></textarea>
-        <div class="comment-form-footer">
-          <span class="char-count" id="charCount">0 / 500</span>
-          <button class="btn btn-primary" id="commentSubmitBtn" onclick="window.__submitComment && window.__submitComment()">نشر التعليق 💬</button>
+      <div class="logo-marquee">
+        <div class="logo-track" id="logoTrack">
+          <div class="logo-chip"><img src="assets/logos/obaida.png" alt="عبيدة" loading="lazy"></div>
+          <div class="logo-chip"><img src="assets/logos/alfares.png" alt="الفارس" loading="lazy"></div>
+          <div class="logo-chip"><img src="assets/logos/alansari.png" alt="الأنصاري" loading="lazy"></div>
+          <div class="logo-chip"><img src="assets/logos/mo_fathy.png" alt="محمد فتحي" loading="lazy"></div>
+          <div class="logo-chip"><img src="assets/logos/zad_almuslim.png" alt="زاد المسلم" loading="lazy"></div>
+          <div class="logo-chip"><img src="assets/logos/almuharib.png" alt="المحارب" loading="lazy"></div>
+          <!-- ▲ الأصلية — ▼ نسخة مكررة لعمل حركة متصلة بدون قطع، سيبها زي ما هي -->
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/obaida.png" alt="" loading="lazy"></div>
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/alfares.png" alt="" loading="lazy"></div>
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/alansari.png" alt="" loading="lazy"></div>
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/mo_fathy.png" alt="" loading="lazy"></div>
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/zad_almuslim.png" alt="" loading="lazy"></div>
+          <div class="logo-chip" aria-hidden="true"><img src="assets/logos/almuharib.png" alt="" loading="lazy"></div>
         </div>
       </div>
-
-      <!-- Comments list -->
-      <div class="comments-list" id="commentsList">
-        <div class="comments-loading">⏳ جاري التحميل...</div>
-      </div>
+      <p class="clients-note">وعميلك الجاي ممكن يكون هنا 👋</p>
     </div>
   </section>
 
@@ -1927,7 +1965,7 @@ body.chat-page-lock{overflow:hidden;}
           <li><a href="#portfolio">أعمالنا</a></li>
           <li><a href="#booking">احجز خدمتك</a></li>
           <li><a href="#testimonials">آراء العملاء</a></li>
-          <li><a href="#comments">التعليقات</a></li>
+          <li><a href="#clients">عملاؤنا</a></li>
         </ul>
       </div>
 
@@ -3773,7 +3811,6 @@ function renderProfileCard(){
       </div>
       <div class="profile-card-divider"></div>
       <div class="profile-card-actions">
-        <a href="#comments" class="btn-pc-comment-link" onclick="closeProfileCard()">💬 اكتب تعليق</a>
         <button class="btn-pc-signout" onclick="signOutUser(); closeProfileCard()">تسجيل الخروج ⏏</button>
       </div>`;
   } else {
