@@ -287,11 +287,11 @@ if(document.readyState === 'loading'){
   --body: 'IBM Plex Sans Arabic', sans-serif;
 
   --radius: 18px;
-  --ease: cubic-bezier(.22,.9,.32,1);
+  --ease: cubic-bezier(.25,.85,.35,1);
 }
 
 *{box-sizing:border-box; margin:0; padding:0;}
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth; overscroll-behavior:none;}
 html{scrollbar-width:thin; scrollbar-color:var(--violet-3) var(--ink-1);}
 ::-webkit-scrollbar{width:12px; height:12px;}
 ::-webkit-scrollbar-track{background:var(--ink-1);}
@@ -853,6 +853,63 @@ h2.section-title{
 
 .booking-submit-status{margin-top:14px; font-size:0.86rem; text-align:center; min-height:20px;}
 
+/* ============================================
+   BOOKING PROGRESS BAR
+   ============================================ */
+.booking-progress{
+  margin-bottom:28px;
+}
+.booking-progress-steps{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; position:relative;
+}
+.booking-progress-steps::before{
+  content:''; position:absolute; top:50%; left:0; right:0; height:2px;
+  background:var(--line); transform:translateY(-50%); z-index:0;
+}
+.bp-step{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  position:relative; z-index:1;
+}
+.bp-dot{
+  width:32px; height:32px; border-radius:50%;
+  background:var(--ink-1); border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.78rem; font-weight:700; color:var(--text-low);
+  transition:all .35s var(--ease);
+  font-family:var(--display);
+}
+.bp-label{
+  font-size:0.72rem; color:var(--text-low); white-space:nowrap;
+  font-family:var(--body); transition:color .35s var(--ease);
+}
+.bp-step.done .bp-dot{
+  background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
+  border-color:var(--lilac-1); color:#fff;
+}
+.bp-step.done .bp-label{ color:var(--lilac-2); }
+.bp-step.active .bp-dot{
+  background:var(--ink-1); border-color:var(--lilac-1);
+  color:var(--lilac-2);
+  box-shadow:0 0 0 4px rgba(157,78,221,0.18);
+}
+.bp-step.active .bp-label{ color:var(--text-hi); font-weight:600; }
+
+.booking-progress-bar-wrap{
+  height:4px; background:var(--line); border-radius:100px; overflow:hidden;
+}
+.booking-progress-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg, var(--violet-3), var(--lilac-1));
+  border-radius:100px;
+  transition:width .45s var(--ease);
+  width:0%;
+}
+@media(max-width:480px){
+  .bp-label{ display:none; }
+  .bp-dot{ width:28px; height:28px; font-size:0.72rem; }
+}
+
 .booking-steps-card{
   background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
   border:1px solid var(--line); border-radius:var(--radius); padding:32px 28px;
@@ -958,8 +1015,8 @@ h2.section-title{
   display:none; align-items:center; justify-content:center; padding:30px;
 }
 .lightbox.show{display:flex;}
-.lightbox-inner{position:relative; max-width:900px; width:100%;}
-.lightbox img, .lightbox iframe{width:100%; max-height:78vh; border-radius:14px; display:block; object-fit:contain; background:var(--ink-1);}
+.lightbox-inner{position:relative; max-width:900px; width:100%; display:flex; align-items:center; justify-content:center;}
+.lightbox img{width:auto; height:auto; max-width:100%; max-height:78vh; border-radius:14px; display:block; object-fit:contain; background:var(--ink-1); margin:0 auto;}
 .lightbox-close{
   position:absolute; top:-46px; left:0; background:none; border:none; color:#fff; font-size:1.8rem;
 }
@@ -2114,6 +2171,32 @@ body.chat-page-lock{overflow:hidden;}
       <div class="booking-grid">
         <!-- Form -->
         <div class="booking-card">
+
+          <!-- Progress Bar -->
+          <div class="booking-progress" id="bookingProgress">
+            <div class="booking-progress-steps">
+              <div class="bp-step active" id="bpStep1">
+                <div class="bp-dot">1</div>
+                <span class="bp-label">بياناتك</span>
+              </div>
+              <div class="bp-step" id="bpStep2">
+                <div class="bp-dot">2</div>
+                <span class="bp-label">وظيفتك</span>
+              </div>
+              <div class="bp-step" id="bpStep3">
+                <div class="bp-dot">3</div>
+                <span class="bp-label">الخدمة</span>
+              </div>
+              <div class="bp-step" id="bpStep4">
+                <div class="bp-dot">4</div>
+                <span class="bp-label">الباقة</span>
+              </div>
+            </div>
+            <div class="booking-progress-bar-wrap">
+              <div class="booking-progress-bar-fill" id="bookingProgressFill"></div>
+            </div>
+          </div>
+
           <div class="booking-row">
             <div class="field booking-field-icon">
               <label>الاسم بالكامل</label>
@@ -2638,8 +2721,8 @@ const SmoothScroll = (function(){
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isFinePointer = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
   const NO_INTERCEPT_SELECTOR = '.chat-body, .chat-window, .dash-overlay, .service-page-overlay, .custom-select-menu, .export-box, textarea, [data-native-scroll]';
-  const EASE = 0.15;            // كل ما قل الرقم، كل ما السكرول بقى أنعم وأبطأ في اللحاق
-  const WHEEL_SPEED = 1;        // معامل حساسية عجلة الماوس
+  const EASE = 0.10;            // كل ما قل الرقم، كل ما السكرول بقى أنعم وأبطأ في اللحاق
+  const WHEEL_SPEED = 0.8;      // معامل حساسية عجلة الماوس
 
   let current = window.scrollY || 0;
   let target = current;
@@ -2655,9 +2738,9 @@ const SmoothScroll = (function(){
   }
   function loop(){
     current += (target - current) * EASE;
-    if(Math.abs(target - current) < 0.5){ current = target; }
+    if(Math.abs(target - current) < 0.3){ current = target; }
     programmatic = true;
-    window.scrollTo(0, current);
+    window.scrollTo(0, Math.round(current));
     programmatic = false;
     rafId = requestAnimationFrame(loop);
   }
@@ -2687,7 +2770,7 @@ const SmoothScroll = (function(){
     // نتجاهل الفروق الصغيرة (دي ناتجة من تحديثاتنا احنا)، ونزامن بس لو حصلت قفزة كبيرة
     // حقيقية زي كيبورد Home/End أو سحب سكرول بار
     const diff = Math.abs(window.scrollY - current);
-    if(diff > 60){
+    if(diff > 40){
       current = window.scrollY;
       target = current;
     }
@@ -2983,9 +3066,7 @@ function renderPortfolio(){
   grid.innerHTML = list.map((w,i)=>{
     const hasImg = w.src && w.src.trim() !== '';
     const inner = hasImg
-      ? (w.type==='youtube'
-          ? `<img src="https://img.youtube.com/vi/${ytId(w.src)}/hqdefault.jpg" alt="${w.title}">`
-          : `<img src="${w.src}" alt="${w.title}" onerror="this.parentElement.querySelector('.pf-empty-icon').style.display='flex'; this.style.display='none';">`)
+      ? `<img src="${w.src}" alt="${w.title}" onerror="this.parentElement.querySelector('.pf-empty-icon').style.display='flex'; this.style.display='none';">`
       : '';
     return `<div class="pf-item" onclick="openLightbox('${w.cat}', ${list.indexOf(w)})">
       ${inner}
@@ -2994,12 +3075,6 @@ function renderPortfolio(){
     </div>`;
   }).join('');
   lightboxList = list;
-}
-
-function ytId(url){
-  if(!url) return '';
-  const m = url.match(/(?:youtu\.be\/|v=|embed\/)([a-zA-Z0-9_-]{6,})/);
-  return m ? m[1] : '';
 }
 
 document.getElementById('filterRow').addEventListener('click', (e)=>{
@@ -3024,11 +3099,7 @@ function showLightboxItem(){
     content.innerHTML = `<div style="background:var(--ink-1); height:50vh; display:flex; align-items:center; justify-content:center; border-radius:14px; color:var(--text-low); font-size:3rem;">${catIcons[item.cat]||'🖼️'}</div>`;
     return;
   }
-  if(item.type==='youtube'){
-    content.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId(item.src)}" frameborder="0" allowfullscreen style="aspect-ratio:16/9; height:auto;"></iframe>`;
-  }else{
-    content.innerHTML = `<img src="${item.src}" alt="${item.title||''}">`;
-  }
+  content.innerHTML = `<img src="${item.src}" alt="${item.title||''}">`;
 }
 function navLightbox(dir){
   lightboxIndex = (lightboxIndex + dir + lightboxList.length) % lightboxList.length;
@@ -3513,9 +3584,12 @@ function chooseJobType(key, label){
     lbl.textContent = cfg.label;
     input.placeholder = cfg.placeholder;
     row.style.display = '';
+    // ربط الـ input بالـ progress
+    input.oninput = updateBookingProgress;
   } else {
     row.style.display = 'none';
   }
+  updateBookingProgress();
 }
 
 function toggleServiceDropdown(force){
@@ -3539,6 +3613,7 @@ function chooseService(key, label){
   });
   toggleServiceDropdown(false);
   onBookingServiceChange(key);
+  updateBookingProgress();
 }
 
 function onBookingServiceChange(key){
@@ -3568,6 +3643,7 @@ function selectBookingPackage(i){
   document.querySelectorAll('#packageGrid .package-option').forEach((el, idx) => {
     el.classList.toggle('selected', idx === i);
   });
+  updateBookingProgress();
 }
 
 function resetBookingForm(){
@@ -3585,7 +3661,63 @@ function resetBookingForm(){
   document.querySelectorAll('#jobSelectMenu .custom-select-option').forEach(el => el.classList.remove('selected'));
   document.getElementById('jobExtraRow').style.display = 'none';
   document.getElementById('bookingJobExtra').value = '';
+  updateBookingProgress();
 }
+
+/* ============================================
+   BOOKING PROGRESS BAR — LOGIC
+   ============================================ */
+function updateBookingProgress(){
+  const name  = (document.getElementById('bookingName')?.value || '').trim();
+  const phone = (document.getElementById('bookingPhone')?.value || '').trim();
+  const jobType = selectedBookingJobType || '';
+  const jobCfg  = JOB_EXTRA_CONFIG ? JOB_EXTRA_CONFIG[jobType] : null;
+  const jobExtra = (document.getElementById('bookingJobExtra')?.value || '').trim();
+
+  // حساب كل خطوة
+  const step1done = name.length > 1 && phone.length > 6;
+  const step2done = step1done && jobType !== '' && (!jobCfg || jobExtra !== '');
+  const step3done = step2done && selectedBookingService !== '';
+  const step4done = step3done && selectedBookingPackage !== null;
+
+  const steps = [
+    { id:'bpStep1', done: step1done, active: !step1done },
+    { id:'bpStep2', done: step2done, active: step1done && !step2done },
+    { id:'bpStep3', done: step3done, active: step2done && !step3done },
+    { id:'bpStep4', done: step4done, active: step3done && !step4done },
+  ];
+
+  steps.forEach(s => {
+    const el = document.getElementById(s.id);
+    if(!el) return;
+    el.classList.toggle('done',   s.done);
+    el.classList.toggle('active', s.active && !s.done);
+    if(s.done) el.querySelector('.bp-dot').innerHTML = '✓';
+    else el.querySelector('.bp-dot').textContent = s.id.replace('bpStep','');
+  });
+
+  // نسبة الشريط
+  const completed = [step1done, step2done, step3done, step4done].filter(Boolean).length;
+  const pct = (completed / 4) * 100;
+  const fill = document.getElementById('bookingProgressFill');
+  if(fill) fill.style.width = pct + '%';
+}
+
+// ربط الـ inputs بالـ progress
+(function initBookingProgressListeners(){
+  function attachOnReady(){
+    const nameEl  = document.getElementById('bookingName');
+    const phoneEl = document.getElementById('bookingPhone');
+    if(nameEl)  nameEl.addEventListener('input', updateBookingProgress);
+    if(phoneEl) phoneEl.addEventListener('input', updateBookingProgress);
+    updateBookingProgress();
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', attachOnReady);
+  } else {
+    attachOnReady();
+  }
+})();
 
 // ⚠️ TODO يا Joe: حط بيانات بوت التليجرام هنا لما تخلص بناء البوت
 const TELEGRAM_BOT_TOKEN = '8905309834:AAGmUJmuRcYgFZYz7WzZOGaMIpDg29jSGkg';
