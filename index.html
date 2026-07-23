@@ -3298,10 +3298,9 @@ function hideTyping(){
 /* ============================================
    GEMINI AI INTEGRATION
    ============================================ */
-// مفتاح Gemini API — مقيّد على دومين الموقع فقط (HTTP referrer restriction) من Google Cloud Console
-const GEMINI_API_KEY = 'AQ.Ab8RN6JSQpZR3nRTfiR_e1g8PeqdhGqCR8Rqm7_py6HkfquF7A';
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// بدل ما الموقع يكلم Gemini مباشرة (وده كان بيعرّض المفتاح للكل)،
+// بقى بيكلم Cloudflare Worker بتاعنا، وهو اللي معاه المفتاح مخبي كـ Secret
+const WORKER_ENDPOINT = 'https://creatix-gemini-proxy.creatixstudio1.workers.dev';
 
 // قاعدة المعرفة الكاملة عن Creatix Studio — بتتبعت كـ system instruction لجيميني
 const CREATIX_KNOWLEDGE = `
@@ -3365,11 +3364,10 @@ let geminiHistory = []; // [{role:'user'|'model', parts:[{text}]}]
 
 async function callGemini(userText){
   geminiHistory.push({ role:'user', parts:[{ text:userText }] });
-  const res = await fetch(GEMINI_ENDPOINT, {
+  const res = await fetch(WORKER_ENDPOINT, {
     method:'POST',
     headers:{
-      'Content-Type':'application/json',
-      'x-goog-api-key': GEMINI_API_KEY
+      'Content-Type':'application/json'
     },
     body: JSON.stringify({
       system_instruction: { parts:[{ text: CREATIX_KNOWLEDGE }] },
