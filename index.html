@@ -986,6 +986,59 @@ h2.section-title{
 .site-card-link:hover{background:var(--violet-3); color:var(--text-hi); transform:translateX(-3px);}
 .site-card-link svg{width:15px; height:15px; stroke:currentColor; fill:none;}
 
+/* ---------- Studios Portal ---------- */
+.studios-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
+@media(max-width:900px){.studios-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.studios-grid{grid-template-columns:1fr;}}
+.studio-card{
+  position:relative; overflow:hidden;
+  border:1px solid var(--line); border-radius:var(--radius);
+  display:flex; flex-direction:column;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+  background:linear-gradient(160deg, rgba(60,9,108,0.4), rgba(16,0,43,0.4));
+}
+.studio-card:hover{transform:translateY(-6px); border-color:var(--line-hi); box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+.studio-card .studio-img{position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; background:var(--ink-1); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.studio-card .studio-img img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease);}
+.studio-card:hover .studio-img img{transform:scale(1.06);}
+.studio-card .studio-img .ph{font-size:2.4rem; opacity:0.25;}
+.studio-img-arrow{
+  position:absolute; top:50%; transform:translateY(-50%); z-index:2;
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--line-hi);
+  background:rgba(16,0,43,0.55); color:var(--text-hi); font-size:1.1rem; line-height:1;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  opacity:0; transition:opacity .25s var(--ease), background .25s var(--ease);
+}
+.studio-card .studio-img:hover .studio-img-arrow{opacity:1;}
+.studio-img-arrow.prev{right:10px;}
+.studio-img-arrow.next{left:10px;}
+.studio-img-arrow:hover{background:var(--violet-3);}
+.studio-img-dots{
+  position:absolute; bottom:10px; left:0; right:0; z-index:2;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.studio-img-dots .dot{width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.4); transition:background .25s var(--ease), transform .25s var(--ease);}
+.studio-img-dots .dot.active{background:var(--lilac-2); transform:scale(1.3);}
+.studio-card .studio-body{padding:22px; display:flex; flex-direction:column; gap:10px; flex-grow:1;}
+.studio-card h3{font-family:var(--display); font-size:1.1rem; font-weight:700; color:var(--text-hi); line-height:1.5;}
+.studio-card .studio-loc{display:flex; align-items:flex-start; gap:8px; color:var(--text-mid); font-size:0.88rem; line-height:1.6;}
+.studio-card .studio-loc svg{width:16px; height:16px; flex-shrink:0; margin-top:3px; stroke:var(--lilac-1); fill:none;}
+.studio-card .studio-desc{color:var(--text-low); font-size:0.85rem; line-height:1.6;}
+.studio-card .studio-btn{
+  margin-top:auto; align-self:flex-start;
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--display); font-weight:700; font-size:0.88rem; color:var(--lilac-2);
+  border:1px solid var(--line-hi); border-radius:999px; padding:9px 18px;
+  background:rgba(16,0,43,0.35);
+  transition:background .3s var(--ease), color .3s var(--ease), transform .3s var(--ease);
+}
+.studio-card .studio-btn:hover{background:var(--violet-3); color:var(--text-hi); transform:translateX(-3px);}
+.studios-empty{
+  grid-column:1/-1; text-align:center; padding:70px 20px; color:var(--text-low);
+  border:1px dashed var(--line-hi); border-radius:18px;
+}
+.studios-empty .big{font-size:2.2rem; margin-bottom:14px;}
+
 .pf-item{
   position:relative; border-radius:16px; overflow:hidden; aspect-ratio:4/5; cursor:pointer;
   border:1px solid var(--line); background:linear-gradient(160deg, rgba(60,9,108,0.6), rgba(16,0,43,0.6));
@@ -1011,7 +1064,7 @@ h2.section-title{
 
 /* lightbox */
 .lightbox{
-  position:fixed; inset:0; z-index:200; background:rgba(16,0,43,0.94); backdrop-filter:blur(10px);
+  position:fixed; inset:0; z-index:400; background:rgba(16,0,43,0.94); backdrop-filter:blur(10px);
   display:none; align-items:center; justify-content:center; padding:30px;
 }
 .lightbox.show{display:flex;}
@@ -1666,6 +1719,14 @@ body.chat-page-lock{overflow:hidden;}
 .sp-section-title{font-family:var(--display); font-size:1.45rem; font-weight:700; margin-bottom:32px;}
 .sp-features{display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:52px;}
 @media(max-width:700px){.sp-features{grid-template-columns:1fr;}}
+.sp-gallery{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:52px;}
+@media(max-width:700px){.sp-gallery{grid-template-columns:repeat(2,1fr);}}
+.sp-gallery-item{
+  position:relative; aspect-ratio:4/3; border-radius:14px; overflow:hidden; cursor:pointer;
+  border:1px solid var(--line);
+}
+.sp-gallery-item img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s var(--ease);}
+.sp-gallery-item:hover img{transform:scale(1.08);}
 .sp-feature{
   background:linear-gradient(165deg, rgba(60,9,108,0.5), rgba(36,0,70,0.35));
   border:1px solid var(--line); border-radius:18px; padding:24px; display:flex; gap:15px; align-items:flex-start;
@@ -1739,6 +1800,7 @@ body.chat-page-lock{overflow:hidden;}
     <a href="#process" onclick="closeMenu()">طريقة شغلنا</a>
     <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
     <a href="#sites" onclick="closeMenu()">مواقع صممناها</a>
+    <a href="#studios" onclick="closeMenu()">بوابة الاستوديوهات</a>
     <a href="#booking" onclick="closeMenu()">احجز خدمتك</a>
     <a href="#testimonials" onclick="closeMenu()">آراء العملاء</a>
     <a href="#clients" onclick="closeMenu()">عملاؤنا</a>
@@ -2049,6 +2111,18 @@ body.chat-page-lock{overflow:hidden;}
     </div>
   </section>
 
+  <!-- ============ STUDIOS PORTAL ============ -->
+  <section id="studios">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">بوابة الاستوديوهات</span>
+        <h2 class="section-title">اختار أقرب استوديو تصوير ليك</h2>
+        <p class="section-desc">مجموعة من استوديوهات التصوير المتاحة، اختار الأقرب لك وتواصل معانا عشان نحجزلك ميعاد التصوير.</p>
+      </div>
+      <div class="studios-grid" id="studiosGrid"></div>
+    </div>
+  </section>
+
   <!-- ============ TESTIMONIALS ============ -->
   <section id="testimonials">
     <div class="wrap">
@@ -2320,6 +2394,7 @@ body.chat-page-lock{overflow:hidden;}
           <li><a href="#process">طريقة شغلنا</a></li>
           <li><a href="#portfolio">أعمالنا</a></li>
           <li><a href="#sites">مواقع صممناها</a></li>
+          <li><a href="#studios">بوابة الاستوديوهات</a></li>
           <li><a href="#booking">احجز خدمتك</a></li>
           <li><a href="#testimonials">آراء العملاء</a></li>
           <li><a href="#clients">عملاؤنا</a></li>
@@ -2589,6 +2664,51 @@ body.chat-page-lock{overflow:hidden;}
   </div>
 </div>
 
+<!-- ============ STUDIO DETAIL PAGE ============ -->
+<div class="service-page-overlay" id="studioPageOverlay" role="dialog" aria-modal="true" aria-labelledby="stpTitle">
+  <div class="sp-head">
+    <div class="wrap">
+      <button class="sp-back" onclick="closeStudioDetail()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        رجوع
+      </button>
+      <div class="sp-crumb">الرئيسية / بوابة الاستوديوهات / <b id="stpCrumbLabel"></b></div>
+    </div>
+  </div>
+  <div class="sp-body">
+    <div class="wrap">
+      <div class="sp-hero">
+        <div class="sp-hero-icon">🎥</div>
+        <h1 id="stpTitle"></h1>
+        <p id="stpLocation"></p>
+      </div>
+
+      <span class="sp-section-label">معرض الصور</span>
+      <h2 class="sp-section-title">صور من داخل الاستوديو</h2>
+      <div class="sp-gallery" id="stpGallery"></div>
+
+      <div id="stpFeedbackSection">
+        <span class="sp-section-label">فيدباك من عملائنا</span>
+        <h2 class="sp-section-title">آراء عملاء اتصوروا معانا</h2>
+        <div class="sp-gallery" id="stpFeedbackGallery"></div>
+      </div>
+
+      <span class="sp-section-label" id="stpDetailsLabel">تفاصيل الحجز</span>
+      <h2 class="sp-section-title" id="stpDetailsTitle">إيه اللي محتاج تعرفه قبل الحجز</h2>
+      <div class="sp-features" id="stpFeatures"></div>
+
+      <div class="sp-cta">
+        <h3>جاهز تحجز ميعادك؟</h3>
+        <p>تواصل معانا دلوقتي وهنساعدك تحدد ميعاد التصوير المناسب.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="stpBookBtn" onclick="bookThisStudio()">تواصل معانا للحجز 💬</button>
+          <button class="btn btn-ghost" onclick="closeStudioDetail()">رجوع لبوابة الاستوديوهات</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ ADMIN DASHBOARD ============ -->
 <div class="dash-overlay" id="dashOverlay">
   <div class="dash-head">
@@ -2603,6 +2723,7 @@ body.chat-page-lock{overflow:hidden;}
       <div class="dash-tabs">
         <button class="dash-tab active" data-tab="works" onclick="switchTab('works')">🖼️ إدارة الأعمال</button>
         <button class="dash-tab" data-tab="reviews" onclick="switchTab('reviews')">💬 آراء العملاء</button>
+        <button class="dash-tab" data-tab="studios" onclick="switchTab('studios')">🎥 بوابة الاستوديوهات</button>
         <button class="dash-tab" data-tab="comments" onclick="switchTab('comments'); window.__loadAdminComments && window.__loadAdminComments()">🗨️ تعليقات الزوار</button>
         <button class="dash-tab" data-tab="bot" onclick="switchTab('bot')">🤖 الشات بوت</button>
       </div>
@@ -2670,6 +2791,25 @@ body.chat-page-lock{overflow:hidden;}
         </div>
         <div class="save-bar">
           <button class="btn btn-primary" onclick="saveReviews()">💾 حفظ التغييرات</button>
+        </div>
+      </div>
+
+      <!-- STUDIOS PANEL -->
+      <div class="dash-panel" id="panel-studios">
+        <div class="dash-card">
+          <h4>+ إضافة استوديو جديد</h4>
+          <div class="field"><label>اسم الاستوديو</label><input type="text" id="stuName" placeholder="مثال: ستوديو Vistara"></div>
+          <div class="field"><label>الموقع / العنوان</label><textarea id="stuLocation" placeholder="مثال: ميدان الساعة بجوار كافيتريا ميلانو أمام سنتر الجامعة التعليمي"></textarea></div>
+          <div class="field"><label>وصف / إمكانيات الاستوديو</label><textarea id="stuDesc" placeholder="مثال: Smart board + full content"></textarea></div>
+          <div class="field"><label>رابط صورة الاستوديو</label><input type="text" id="stuImgInput" placeholder="https://i.ibb.co/xxxxx/image.jpg"></div>
+          <button class="btn btn-ghost" onclick="addStudio()">+ إضافة الاستوديو</button>
+        </div>
+        <div class="dash-card">
+          <h4>📋 الاستوديوهات المضافة (<span id="studiosCount">0</span>)</h4>
+          <div class="item-list" id="studiosList"></div>
+        </div>
+        <div class="save-bar">
+          <button class="btn btn-primary" onclick="saveStudios()">💾 حفظ التغييرات</button>
         </div>
       </div>
 
@@ -2822,7 +2962,28 @@ document.addEventListener('click', function(e){
 /* ============================================
    DATA LAYER — localStorage backed
    ============================================ */
-const LS_KEYS = { works:'creatix_works', reviews:'creatix_reviews', bot:'creatix_bot_texts' };
+const LS_KEYS = { works:'creatix_works', reviews:'creatix_reviews', bot:'creatix_bot_texts', studios:'creatix_studios' };
+
+// Starter studios data — ready for admin to add more via the dashboard
+const DEFAULT_STUDIOS = [
+  {id:2, name:'ستوديو السينيور Senior Studio', location:'شارع سيف - أعلى كازيون ماركت - الدور الأول - سيدي بشر - الإسكندرية', desc:'مواعيد العمل يوميًا من الساعة 1 لـ 1 (يتم الإخطار قبل التصوير بيوم لاستلام ميعاد مناسب حسب جدول التصوير)\nتسليم الحصص خلال 24 ساعة، والكونتنت خلال 3 أيام عمل', imgs:[
+    'https://i.ibb.co/0pYhRqTV/position-1.jpg',
+    'https://i.ibb.co/0NkHyXJ/position-2.jpg',
+    'https://i.ibb.co/B5CGMS3D/position-3.jpg',
+    'https://i.ibb.co/bgTC1Vjn/position-4.jpg',
+    'https://i.ibb.co/1fL7rbM8/position-5.jpg',
+    'https://i.ibb.co/PZzFFk9N/position-6.jpg',
+    'https://i.ibb.co/vCXX6m9r/position-7.jpg',
+    'https://i.ibb.co/DfJSBrRW/position-8.jpg',
+    'https://i.ibb.co/SHFFgX5/position-9.jpg',
+    'https://i.ibb.co/LzgzvhnL/position-10.jpg',
+    'https://i.ibb.co/WvLppGcL/position-11.jpg',
+    'https://i.ibb.co/C56BZ8t7/position-12.jpg'
+  ], feedback:[
+    'https://i.ibb.co/1f4YhSFK/image.png'
+  ]},
+  {id:1, name:'سيتم الإضافة قريبًا..', location:'سيتم الإضافة قريبًا..', desc:'', img:'data:image/jpeg;base64,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'},
+];
 
 // Starter portfolio data — empty image src, ready for admin to fill via links
 const DEFAULT_WORKS = [
@@ -2879,6 +3040,7 @@ function saveData(key, data){
 
 let WORKS = loadData(LS_KEYS.works, DEFAULT_WORKS);
 let REVIEWS = loadData(LS_KEYS.reviews, DEFAULT_REVIEWS);
+let STUDIOS = loadData(LS_KEYS.studios, DEFAULT_STUDIOS);
 let BOT_TEXTS = loadData(LS_KEYS.bot, DEFAULT_BOT);
 if(!Array.isArray(BOT_TEXTS.extraQA)) BOT_TEXTS.extraQA = JSON.parse(JSON.stringify(DEFAULT_BOT.extraQA));
 let currentFilter = 'all';
@@ -3030,8 +3192,93 @@ document.addEventListener('keydown', e=>{
   if(e.key === 'Escape'){
     const overlay = document.getElementById('servicePageOverlay');
     if(overlay.classList.contains('show')) closeServiceDetail();
+    const stOverlay = document.getElementById('studioPageOverlay');
+    if(stOverlay.classList.contains('show')) closeStudioDetail();
   }
 });
+
+/* ============================================
+   STUDIO DETAIL PAGE
+   ============================================ */
+let currentStudioIdx = null;
+function openStudioDetail(sIdx){
+  const s = STUDIOS[sIdx];
+  if(!s) return;
+  currentStudioIdx = sIdx;
+  const imgs = (s.imgs && s.imgs.length) ? s.imgs : (s.img && s.img.trim()!=='' ? [s.img] : []);
+
+  document.getElementById('stpTitle').textContent = s.name;
+  document.getElementById('stpLocation').textContent = s.location || '';
+  document.getElementById('stpCrumbLabel').textContent = s.name;
+
+  const gallery = document.getElementById('stpGallery');
+  gallery.innerHTML = imgs.length
+    ? imgs.map((src,i)=>`<div class="sp-gallery-item" onclick="openStudioLightboxFromDetail(${i})"><img src="${src}" alt="${escapeHtml(s.name)}" loading="lazy"></div>`).join('')
+    : `<div class="pf-empty-state" style="grid-column:1/-1;">لسه مفيش صور مضافة.</div>`;
+
+  const feedbackSection = document.getElementById('stpFeedbackSection');
+  const feedbackImgs = (s.feedback && s.feedback.length) ? s.feedback : [];
+  if(feedbackImgs.length){
+    feedbackSection.style.display = '';
+    document.getElementById('stpFeedbackGallery').innerHTML = feedbackImgs.map((src,i)=>
+      `<div class="sp-gallery-item" onclick="openStudioFeedbackLightbox(${i})"><img src="${src}" alt="فيدباك عملاء ${escapeHtml(s.name)}" loading="lazy"></div>`).join('');
+  } else {
+    feedbackSection.style.display = 'none';
+    document.getElementById('stpFeedbackGallery').innerHTML = '';
+  }
+
+  const featuresWrap = document.getElementById('stpFeatures');
+  const detailsLabel = document.getElementById('stpDetailsLabel');
+  const detailsTitle = document.getElementById('stpDetailsTitle');
+  if(s.desc && s.desc.trim() !== ''){
+    detailsLabel.style.display = '';
+    detailsTitle.style.display = '';
+    featuresWrap.style.display = '';
+    featuresWrap.innerHTML = `
+      <div class="sp-feature">
+        <div class="num">📍</div>
+        <div><h4>العنوان</h4><p>${escapeHtml(s.location||'')}</p></div>
+      </div>
+      <div class="sp-feature">
+        <div class="num">🕐</div>
+        <div><h4>تفاصيل الحجز والتسليم</h4><p>${escapeHtml(s.desc).replace(/\n/g,'<br>')}</p></div>
+      </div>`;
+  } else {
+    detailsLabel.style.display = 'none';
+    detailsTitle.style.display = 'none';
+    featuresWrap.style.display = 'none';
+  }
+
+  const overlay = document.getElementById('studioPageOverlay');
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(()=> overlay.classList.add('in'));
+  overlay.scrollTop = 0;
+}
+function closeStudioDetail(){
+  const overlay = document.getElementById('studioPageOverlay');
+  overlay.classList.remove('in');
+  document.body.style.overflow = '';
+  setTimeout(()=> overlay.classList.remove('show'), 300);
+}
+function openStudioLightboxFromDetail(imgIdx){
+  if(currentStudioIdx === null) return;
+  openStudioLightbox(currentStudioIdx, imgIdx);
+}
+function openStudioFeedbackLightbox(imgIdx){
+  if(currentStudioIdx === null) return;
+  const s = STUDIOS[currentStudioIdx];
+  if(!s || !s.feedback || !s.feedback.length) return;
+  lightboxList = s.feedback.map(src => ({src, title:s.name}));
+  openLightbox(null, imgIdx);
+}
+function bookThisStudio(){
+  if(currentStudioIdx === null) return;
+  const s = STUDIOS[currentStudioIdx];
+  if(!s) return;
+  const waText = encodeURIComponent(`أهلاً، حابب أستفسر عن التصوير في ${s.name}`);
+  window.open(`https://wa.me/201223093974?text=${waText}`, '_blank', 'noopener,noreferrer');
+}
 
 /* ============================================
    NAV
@@ -3129,6 +3376,76 @@ function renderTestimonials(){
   `).join('');
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================
+   STUDIO IMAGE GALLERY (slider + lightbox)
+   ============================================ */
+const studioImgState = {};
+function studioImgNav(btn, dir, sIdx){
+  const s = STUDIOS[sIdx];
+  if(!s) return;
+  const imgs = (s.imgs && s.imgs.length) ? s.imgs : (s.img ? [s.img] : []);
+  if(imgs.length < 2) return;
+  let idx = studioImgState[sIdx] || 0;
+  idx = (idx + dir + imgs.length) % imgs.length;
+  studioImgState[sIdx] = idx;
+  const container = btn.closest('.studio-img');
+  const imgEl = container.querySelector('img');
+  if(imgEl){
+    imgEl.src = imgs[idx];
+    imgEl.setAttribute('onclick', `openStudioLightbox(${sIdx},${idx})`);
+  }
+  container.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('active', i===idx));
+}
+function openStudioLightbox(sIdx, imgIdx){
+  const s = STUDIOS[sIdx];
+  if(!s) return;
+  const imgs = (s.imgs && s.imgs.length) ? s.imgs : (s.img ? [s.img] : []);
+  if(!imgs.length) return;
+  lightboxList = imgs.map(src => ({src, title:s.name}));
+  openLightbox(null, imgIdx);
+}
+
+/* ============================================
+   RENDER STUDIOS PORTAL
+   ============================================ */
+function renderStudios(){
+  const grid = document.getElementById('studiosGrid');
+  if(!grid) return;
+  if(STUDIOS.length===0){
+    grid.innerHTML = `<div class="studios-empty"><div class="big">🎥</div>لسه مفيش استوديوهات مضافة.<br>الأدمن هيضيفها قريب.</div>`;
+    return;
+  }
+  grid.innerHTML = STUDIOS.map((s, sIdx)=>{
+    const imgs = (s.imgs && s.imgs.length) ? s.imgs : (s.img && s.img.trim()!=='' ? [s.img] : []);
+    const hasImg = imgs.length > 0;
+    const imgInner = hasImg
+      ? `<img src="${imgs[0]}" alt="${escapeHtml(s.name)}" onclick="openStudioLightbox(${sIdx},0)" onerror="this.parentElement.querySelector('.ph').style.display='flex'; this.style.display='none';">`
+      : '';
+    const navInner = imgs.length > 1
+      ? `<button type="button" class="studio-img-arrow prev" onclick="event.stopPropagation(); studioImgNav(this,-1,${sIdx})" aria-label="السابق">‹</button>
+         <button type="button" class="studio-img-arrow next" onclick="event.stopPropagation(); studioImgNav(this,1,${sIdx})" aria-label="التالي">›</button>
+         <div class="studio-img-dots">${imgs.map((_,i)=>`<span class="dot${i===0?' active':''}"></span>`).join('')}</div>`
+      : '';
+    const descHtml = s.desc ? escapeHtml(s.desc).replace(/\n/g,'<br>') : '';
+    return `<div class="studio-card">
+      <div class="studio-img">
+        ${imgInner}
+        <div class="ph" style="display:${hasImg?'none':'flex'}">🎥</div>
+        ${navInner}
+      </div>
+      <div class="studio-body">
+        <h3>${escapeHtml(s.name)}</h3>
+        <div class="studio-loc">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <span>${escapeHtml(s.location)}</span>
+        </div>
+        ${descHtml ? `<p class="studio-desc">${descHtml}</p>` : ''}
+        <button type="button" class="studio-btn" onclick="openStudioDetail(${sIdx})">اعرف تفاصيل أكتر 🎬</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 /* ============================================
    CHATBOT
@@ -3881,6 +4198,7 @@ function openDashboard(){
   document.body.style.overflow = 'hidden';
   renderWorksAdmin();
   renderReviewsAdmin();
+  renderStudiosAdmin();
   loadBotForm();
 }
 function goHome(){
@@ -3990,6 +4308,54 @@ function saveReviews(){
 }
 
 /* ============================================
+   ADMIN — STUDIOS MANAGEMENT
+   ============================================ */
+function addStudio(){
+  const name = document.getElementById('stuName').value.trim();
+  const location = document.getElementById('stuLocation').value.trim();
+  const desc = document.getElementById('stuDesc').value.trim();
+  const img = document.getElementById('stuImgInput').value.trim();
+  if(!name || !location){ showToast('⚠️ من فضلك اكتب اسم الاستوديو وموقعه'); return; }
+  STUDIOS.unshift({id:Date.now()+Math.random(), name, location, desc, img});
+  document.getElementById('stuName').value = '';
+  document.getElementById('stuLocation').value = '';
+  document.getElementById('stuDesc').value = '';
+  document.getElementById('stuImgInput').value = '';
+  renderStudiosAdmin();
+  renderStudios();
+  showToast('✅ تم إضافة الاستوديو');
+}
+function renderStudiosAdmin(){
+  const list = document.getElementById('studiosList');
+  if(!list) return;
+  document.getElementById('studiosCount').textContent = STUDIOS.length;
+  if(STUDIOS.length===0){
+    list.innerHTML = '<div class="empty-row">لسه مفيش استوديوهات مضافة</div>';
+    return;
+  }
+  list.innerHTML = STUDIOS.map(s=>{
+    const thumbSrc = s.img || (s.imgs && s.imgs[0]) || '';
+    const thumb = thumbSrc
+      ? `<img src="${thumbSrc}" onerror="this.outerHTML='<div class=\\'thumb-ph\\'>🎥</div>'">`
+      : `<div class="thumb-ph">🎥</div>`;
+    return `<div class="item-row">
+      ${thumb}
+      <div class="meta"><div class="t">${escapeHtml(s.name)}</div><div class="c">${escapeHtml(s.location)}</div></div>
+      <button class="del" onclick="deleteStudio('${s.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function deleteStudio(id){
+  STUDIOS = STUDIOS.filter(s=> String(s.id) !== String(id));
+  renderStudiosAdmin();
+  renderStudios();
+}
+function saveStudios(){
+  saveData(LS_KEYS.studios, STUDIOS);
+  showToast('💾 تم حفظ الاستوديوهات بنجاح');
+}
+
+/* ============================================
    ADMIN — BOT TEXTS
    ============================================ */
 function loadBotForm(){
@@ -4071,6 +4437,7 @@ function showToast(msg){
    ============================================ */
 renderPortfolio();
 renderTestimonials();
+renderStudios();
 
 /* ============================================
    DESIGNER UPLOAD ACCESS
@@ -4437,7 +4804,7 @@ renderProfileCard();
    GENERIC SCROLL-REVEAL FOR CARDS/GRIDS
    ============================================ */
 (function(){
-  const staticSelectors = ['.service-card', '.team-card', '.process-card', '.site-card'];
+  const staticSelectors = ['.service-card', '.team-card', '.process-card', '.site-card', '.studio-card'];
   const obs = new IntersectionObserver(entries => {
     entries.forEach((entry, i) => {
       if(entry.isIntersecting){
@@ -4456,7 +4823,7 @@ renderProfileCard();
   document.querySelectorAll(staticSelectors.join(',')).forEach(prep);
 
   // Watch grids that get populated dynamically (portfolio + testimonials)
-  ['portfolioGrid', 'testGrid'].forEach(id => {
+  ['portfolioGrid', 'testGrid', 'studiosGrid'].forEach(id => {
     const grid = document.getElementById(id);
     if(!grid) return;
     grid.querySelectorAll(':scope > *').forEach(prep);
