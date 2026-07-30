@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<!-- GitHub Pages SPA routing: decode the redirect from 404.html back into a clean URL -->
+<script>
+(function(l){
+  if(l.search[1] === '/'){
+    var decoded = l.search.slice(1).split('&').map(function(s){ return s.replace(/~and~/g, '&'); }).join('?');
+    window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+  }
+})(window.location);
+</script>
 <meta name="google-site-verification" content="AdWBxb-n7zd79DslRVtZb86kg6VE-Yr_Sm-tZ4zLl0g" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2966,7 +2975,7 @@ const LS_KEYS = { works:'creatix_works', reviews:'creatix_reviews', bot:'creatix
 
 // Starter studios data — ready for admin to add more via the dashboard
 const DEFAULT_STUDIOS = [
-  {id:2, name:'ستوديو السينيور Senior Studio', location:'شارع سيف - أعلى كازيون ماركت - الدور الأول - سيدي بشر - الإسكندرية', desc:'مواعيد العمل يوميًا من الساعة 1 لـ 1 (يتم الإخطار قبل التصوير بيوم لاستلام ميعاد مناسب حسب جدول التصوير)\nتسليم الحصص خلال 24 ساعة، والكونتنت خلال 3 أيام عمل', imgs:[
+  {id:2, name:'ستوديو السينيور Senior Studio', slug:'seniorstudio1', location:'شارع سيف - أعلى كازيون ماركت - الدور الأول - سيدي بشر - الإسكندرية', desc:'مواعيد العمل يوميًا من الساعة 1 لـ 1 (يتم الإخطار قبل التصوير بيوم لاستلام ميعاد مناسب حسب جدول التصوير)\nتسليم الحصص خلال 24 ساعة، والكونتنت خلال 3 أيام عمل', imgs:[
     'https://i.ibb.co/0pYhRqTV/position-1.jpg',
     'https://i.ibb.co/0NkHyXJ/position-2.jpg',
     'https://i.ibb.co/B5CGMS3D/position-3.jpg',
@@ -3201,7 +3210,8 @@ document.addEventListener('keydown', e=>{
    STUDIO DETAIL PAGE
    ============================================ */
 let currentStudioIdx = null;
-function openStudioDetail(sIdx){
+function openStudioDetail(sIdx, pushUrl){
+  if(pushUrl === undefined) pushUrl = true;
   const s = STUDIOS[sIdx];
   if(!s) return;
   currentStudioIdx = sIdx;
@@ -3254,13 +3264,39 @@ function openStudioDetail(sIdx){
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(()=> overlay.classList.add('in'));
   overlay.scrollTop = 0;
+  if(pushUrl) updateUrlForStudio(s);
 }
-function closeStudioDetail(){
+function closeStudioDetail(pushUrl){
+  if(pushUrl === undefined) pushUrl = true;
   const overlay = document.getElementById('studioPageOverlay');
   overlay.classList.remove('in');
   document.body.style.overflow = '';
   setTimeout(()=> overlay.classList.remove('show'), 300);
+  if(pushUrl) updateUrlForHome();
 }
+function updateUrlForStudio(s){
+  if(!s || !s.slug) return;
+  const path = '/' + s.slug + '/';
+  if(window.location.pathname !== path){
+    window.history.pushState({studioSlug:s.slug}, '', path);
+  }
+}
+function updateUrlForHome(){
+  if(window.location.pathname !== '/'){
+    window.history.pushState({}, '', '/');
+  }
+}
+function routeFromLocation(){
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  if(!path){
+    const overlay = document.getElementById('studioPageOverlay');
+    if(overlay && overlay.classList.contains('show')) closeStudioDetail(false);
+    return;
+  }
+  const idx = STUDIOS.findIndex(s => s.slug === path);
+  if(idx !== -1) openStudioDetail(idx, false);
+}
+window.addEventListener('popstate', routeFromLocation);
 function openStudioLightboxFromDetail(imgIdx){
   if(currentStudioIdx === null) return;
   openStudioLightbox(currentStudioIdx, imgIdx);
@@ -4438,6 +4474,7 @@ function showToast(msg){
 renderPortfolio();
 renderTestimonials();
 renderStudios();
+routeFromLocation();
 
 /* ============================================
    DESIGNER UPLOAD ACCESS

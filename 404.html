@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Creatix Studio</title>
+<!--
+  Single Page Apps for GitHub Pages
+  https://github.com/rafgraph/spa-github-pages
+  هذا الملف بيتفعّل تلقائيًا لما حد يفتح لينك مباشر زي
+  https://creatixstudio1.github.io/seniorstudio1/
+  أو يعمل ريفرش وهو فيه — GitHub Pages بيدور على مجلد باسم "seniorstudio1"
+  مش موجود فعليًا، فبيعرض الصفحة دي، وهي بدورها بترجّع الزائر
+  لملف index.html الأساسي مع الحفاظ على نفس الرابط.
+-->
+<script>
+  var segmentCount = 0;
+  var l = window.location;
+  l.replace(
+    l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+    l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/?/' +
+    l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+    (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+    l.hash
+  );
+</script>
+</head>
+<body>
+</body>
+</html>
