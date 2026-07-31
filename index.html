@@ -957,6 +957,19 @@ h2.section-title{
 @media(max-width:900px){.portfolio-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:600px){.portfolio-grid{grid-template-columns:1fr;}}
 
+/* ---------- Video editing works ---------- */
+.videos-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:22px;}
+.video-card{
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  display:flex; flex-direction:column; background:var(--ink-1);
+  transition:transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.video-card:hover{transform:translateY(-6px); border-color:var(--line-hi); box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+.video-embed{position:relative; width:100%; aspect-ratio:9/16; background:#000;}
+.video-embed iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+.video-card-body{padding:16px 18px;}
+.video-card-body h3{font-family:var(--display); font-size:1rem; font-weight:700; color:var(--text-hi); line-height:1.5;}
+
 /* ---------- Websites we built ---------- */
 .sites-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
 @media(max-width:900px){.sites-grid{grid-template-columns:repeat(2,1fr);}}
@@ -1808,6 +1821,7 @@ body.chat-page-lock{overflow:hidden;}
     <a href="#services" onclick="closeMenu()">الخدمات</a>
     <a href="#process" onclick="closeMenu()">طريقة شغلنا</a>
     <a href="#portfolio" onclick="closeMenu()">أعمالنا</a>
+    <a href="#videos" onclick="closeMenu()">مونتاج الفيديوهات</a>
     <a href="#sites" onclick="closeMenu()">مواقع صممناها</a>
     <a href="#studios" onclick="closeMenu()">بوابة الاستوديوهات</a>
     <a href="#booking" onclick="closeMenu()">احجز خدمتك</a>
@@ -2066,6 +2080,29 @@ body.chat-page-lock{overflow:hidden;}
         <button class="filter-btn" data-filter="brand">الهوية البصرية</button>
       </div>
       <div class="portfolio-grid" id="portfolioGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIDEO EDITING WORKS ============ -->
+  <section id="videos">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">مونتاج الفيديوهات</span>
+        <h2 class="section-title">شغلنا في المونتاج والفيديوهات</h2>
+        <p class="section-desc">نماذج من الفيديوهات اللي مونتجناها لعملائنا — من الفكرة لحد التنفيذ النهائي.</p>
+      </div>
+      <div class="videos-grid" id="videosGrid">
+
+        <div class="video-card">
+          <div class="video-embed">
+            <iframe src="https://www.youtube.com/embed/R4pUtD4Jl1s" title="مونتاج احترافي لفيديو تعليمي | من تنفيذ Creatix Studio 💜✨" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
+          </div>
+          <div class="video-card-body">
+            <h3>مونتاج احترافي لفيديو تعليمي</h3>
+          </div>
+        </div>
+
+      </div>
     </div>
   </section>
 
@@ -3000,6 +3037,10 @@ const DEFAULT_WORKS = [
   {id:2, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/Sj4Q4k6/image.png'},
   {id:3, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/LDPwDywD/1.png'},
   {id:6, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/8DStwP9Q/image.png'},
+  {id:7, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/Xr11NXTd/2.png'},
+  {id:8, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/607VJtZ7/image.png'},
+  {id:9, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/8ng5d2fM/1.png'},
+  {id:10, cat:'edu', title:'تصميم تعليمي', type:'image', src:'https://i.ibb.co/27kTgSyK/image.png'},
   {id:4, cat:'logo', title:'شعار براند', type:'image', src:''},
   {id:5, cat:'brand', title:'هوية بصرية متكاملة', type:'image', src:''},
 ];
