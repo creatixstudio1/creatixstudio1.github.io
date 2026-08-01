@@ -1365,8 +1365,8 @@ footer::before{
   background:linear-gradient(135deg, var(--violet-3), var(--lilac-1));
   display:flex; align-items:center; justify-content:center;
   transition:transform .3s var(--ease), box-shadow .3s var(--ease);
-  touch-action:none; user-select:none; -webkit-user-select:none;
-  cursor:grab; animation:launcherPulse 2.6s ease-out infinite;
+  user-select:none; -webkit-user-select:none;
+  cursor:pointer; animation:launcherPulse 2.6s ease-out infinite;
 }
 .chat-launcher svg{width:26px; height:26px; color:#fff; position:relative; z-index:1;}
 .chat-launcher::after{
@@ -1376,10 +1376,6 @@ footer::before{
 }
 .chat-launcher:hover{transform:scale(1.08); animation-play-state:paused;}
 .chat-launcher:hover::after{opacity:0.9;}
-.chat-launcher.dragging{
-  transition:none; cursor:grabbing; box-shadow:0 14px 40px rgba(157,78,221,0.7); transform:scale(1.1);
-  animation-play-state:paused;
-}
 .chat-launcher .badge{
   position:absolute; top:-3px; right:-3px; background:#ff4d6d; color:#fff; font-size:0.68rem;
   width:19px; height:19px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;
@@ -3455,112 +3451,15 @@ function renderStudios(){
    ============================================ */
 let chatOpened = false;
 /* ============================================
-   CHAT LAUNCHER — DRAGGABLE
+   CHAT LAUNCHER — FIXED POSITION (dragging disabled)
    ============================================ */
 const chatLauncher = document.getElementById('chatLauncher');
 const CHAT_POS_KEY = 'creatix_chat_launcher_pos';
+// إزالة أي موضع كان محفوظ قبل كده من وقت لما الزرار كان قابل للسحب
+try{ localStorage.removeItem(CHAT_POS_KEY); }catch(e){}
 
-function clampPos(x, y){
-  const size = chatLauncher.offsetWidth || 60;
-  const margin = 8;
-  const maxX = window.innerWidth - size - margin;
-  const maxY = window.innerHeight - size - margin;
-  return { x: Math.min(Math.max(x, margin), Math.max(maxX, margin)),
-           y: Math.min(Math.max(y, margin), Math.max(maxY, margin)) };
-}
-function setLauncherPos(x, y, save){
-  const c = clampPos(x, y);
-  chatLauncher.style.left = c.x + 'px';
-  chatLauncher.style.top = c.y + 'px';
-  if(save){
-    try{ localStorage.setItem(CHAT_POS_KEY, JSON.stringify(c)); }catch(e){}
-  }
-  return c;
-}
-
-
-// restore saved position, or default to bottom-left
-(function initLauncherPos(){
-  let saved = null;
-  try{ saved = JSON.parse(localStorage.getItem(CHAT_POS_KEY) || 'null'); }catch(e){}
-  if(saved && typeof saved.x === 'number' && typeof saved.y === 'number'){
-    setLauncherPos(saved.x, saved.y, false);
-  }else{
-    setLauncherPos(26, window.innerHeight - 86, false);
-  }
-})();
-window.addEventListener('resize', ()=>{
-  const rect = chatLauncher.getBoundingClientRect();
-  setLauncherPos(rect.left, rect.top, false);
-});
-
-let dragState = null; // {startX, startY, originX, originY, moved}
-let justDragged = false; // prevents the click event right after a drag from opening the chat
-const DRAG_THRESHOLD = 6; // px before a press counts as a drag, not a click
-
-function dragStart(clientX, clientY){
-  const rect = chatLauncher.getBoundingClientRect();
-  dragState = { startX:clientX, startY:clientY, originX:rect.left, originY:rect.top, moved:false };
-  chatLauncher.classList.add('dragging');
-}
-function dragMove(clientX, clientY){
-  if(!dragState) return;
-  const dx = clientX - dragState.startX;
-  const dy = clientY - dragState.startY;
-  if(!dragState.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD){
-    dragState.moved = true;
-  }
-  if(dragState.moved){
-    setLauncherPos(dragState.originX + dx, dragState.originY + dy, false);
-  }
-}
-function dragEnd(){
-  if(!dragState) return;
-  if(dragState.moved){
-    const rect = chatLauncher.getBoundingClientRect();
-    setLauncherPos(rect.left, rect.top, true); // persist final position
-    justDragged = true;
-    setTimeout(()=>{ justDragged = false; }, 50);
-  }
-  chatLauncher.classList.remove('dragging');
-  dragState = null;
-}
-
-// Mouse events
-chatLauncher.addEventListener('mousedown', e=>{
-  e.preventDefault();
-  dragStart(e.clientX, e.clientY);
-});
-window.addEventListener('mousemove', e=>{
-  if(dragState) dragMove(e.clientX, e.clientY);
-});
-window.addEventListener('mouseup', ()=>{
-  if(dragState) dragEnd();
-});
-
-// Touch events (tablets / phones)
-chatLauncher.addEventListener('touchstart', e=>{
-  const t = e.touches[0];
-  dragStart(t.clientX, t.clientY);
-}, {passive:true});
-window.addEventListener('touchmove', e=>{
-  if(dragState){
-    const t = e.touches[0];
-    dragMove(t.clientX, t.clientY);
-  }
-}, {passive:true});
-window.addEventListener('touchend', ()=>{
-  if(dragState) dragEnd();
-});
-
-// Click handler: only opens chat if it wasn't a drag
-chatLauncher.addEventListener('click', (e)=>{
-  if(justDragged){
-    e.preventDefault();
-    return;
-  }
-  toggleChat();
-});
+// Click handler: يفتح الشات دايمًا، الزرار ثابت مكانه
+chatLauncher.addEventListener('click', ()=> toggleChat());
 function toggleChat(force){
   const win = document.getElementById('chatWindow');
   const show = force !== undefined ? force : !win.classList.contains('show');
