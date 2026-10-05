@@ -1760,6 +1760,59 @@ body.chat-page-lock{overflow:hidden;}
 .sp-cta h3{font-family:var(--display); font-size:1.35rem; margin-bottom:10px;}
 .sp-cta p{color:var(--text-mid); margin-bottom:26px;}
 .sp-cta .btn-row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+
+/* ===== Hero upgrade: fuchsia accent, floating visual, side dots ===== */
+:root{--fuchsia:#FF4DDB; --fuchsia-2:#D61FB5;}
+.eyebrow .dot{background:var(--fuchsia); box-shadow:0 0 10px var(--fuchsia);}
+h1.hero-title .hl{
+  position:relative; display:inline-block;
+  background:linear-gradient(95deg,var(--fuchsia),var(--lilac-1));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,77,219,.35));
+}
+h1.hero-title .hl::after{content:''; position:absolute; inset-inline:0; bottom:-4px; height:3px; border-radius:3px; background:linear-gradient(90deg,var(--fuchsia),transparent);}
+.hero .btn-primary{background:linear-gradient(135deg,var(--violet-3),var(--fuchsia)); color:#fff; box-shadow:0 8px 28px rgba(255,77,219,.4);}
+.hero .btn-primary:hover{box-shadow:0 12px 36px rgba(255,77,219,.6);}
+.hero-visual{display:none;}
+@media(min-width:1120px){
+  h1.hero-title{max-width:640px; font-size:clamp(2.4rem,4.6vw,4.2rem);}
+  .hero-sub{max-width:540px;}
+  .stats-row{max-width:640px; gap:28px;}
+  .hero-visual{display:block; position:absolute; z-index:1; left:6%; top:50%; width:440px; height:520px; transform:translateY(-50%);}
+}
+@media(min-width:1120px) and (max-width:1320px){.hero-visual{transform:translateY(-50%) scale(.82); transform-origin:left center; left:5%;}}
+.hv-orb{position:absolute; left:50%; top:50%; width:190px; height:190px; margin:-95px 0 0 -95px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle,rgba(157,78,221,.55),rgba(36,0,70,.2) 70%); box-shadow:0 0 70px rgba(255,77,219,.28);}
+.hv-orb img{width:96px; height:96px; object-fit:contain; position:relative; filter:drop-shadow(0 0 16px rgba(224,170,255,.7));}
+.hv-ring{position:absolute; inset:-22px; border-radius:50%; border:1px dashed var(--line-hi); animation:hvSpin 28s linear infinite;}
+.hv-ring.r2{inset:-52px; border-color:var(--line); animation-duration:44s; animation-direction:reverse;}
+@keyframes hvSpin{to{transform:rotate(360deg);}}
+.hv-card,.hv-chip{position:absolute; animation:hvFloat 6s ease-in-out infinite; transform:rotate(var(--r));}
+.hv-card{width:230px; padding:16px 18px; border-radius:20px; background:linear-gradient(160deg,rgba(60,9,108,.78),rgba(16,0,43,.82)); border:1px solid var(--line-hi); backdrop-filter:blur(10px); box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.hv-a{top:18px; right:-10px;}
+.hv-b{bottom:92px; left:-14px; width:210px; animation-delay:-2.5s;}
+.hv-row{display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--text-hi); font-size:.85rem;}
+.hv-row b{font-family:var(--display); font-weight:800;}
+.hv-b .hv-row b{font-size:1.7rem; color:var(--lilac-2);}
+.hv-b .hv-row span{color:var(--text-mid); font-size:.8rem;}
+.hv-ok{color:#6EE7B7; font-size:.72rem; font-weight:600;}
+.hv-a p{margin:10px 0 12px; font-size:.78rem; color:var(--text-mid);}
+.hv-bar{height:6px; border-radius:6px; background:rgba(199,125,255,.18); overflow:hidden;}
+.hv-bar i{display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--violet-4),var(--fuchsia));}
+.hv-bars{display:flex; align-items:flex-end; gap:7px; height:54px; margin-top:12px;}
+.hv-bars i{flex:1; border-radius:5px 5px 2px 2px; background:linear-gradient(180deg,var(--fuchsia),var(--violet-3));}
+.hv-chip{bottom:6px; right:22px; padding:14px 22px; border-radius:18px; background:linear-gradient(135deg,var(--fuchsia),var(--violet-3)); color:#fff; box-shadow:0 16px 40px rgba(255,77,219,.45); animation-delay:-4s; display:flex; flex-direction:column;}
+.hv-chip small{font-size:.74rem; opacity:.9;}
+.hv-chip b{font-family:var(--display); font-weight:900; font-size:1.8rem; line-height:1.1;}
+@keyframes hvFloat{0%,100%{transform:rotate(var(--r)) translateY(0);}50%{transform:rotate(var(--r)) translateY(-12px);}}
+@media(prefers-reduced-motion:reduce){.hv-card,.hv-chip,.hv-ring{animation:none;}}
+.side-dots{position:fixed; left:18px; top:50%; transform:translateY(-50%); z-index:60; display:none; flex-direction:column; align-items:center; gap:13px; padding:14px 9px; border-radius:100px; background:rgba(16,0,43,.6); border:1px solid var(--line); backdrop-filter:blur(8px);}
+@media(min-width:900px){.side-dots{display:flex;}}
+.side-dots a{position:relative; display:block; width:8px; height:8px; border-radius:8px; background:var(--text-low); opacity:.6; transition:height .3s var(--ease),background .3s,opacity .3s,box-shadow .3s;}
+.side-dots a::after{content:''; position:absolute; inset:-6px;}
+.side-dots a:hover{opacity:1; background:var(--lilac-1);}
+.side-dots a.active{height:26px; opacity:1; background:linear-gradient(var(--fuchsia),var(--violet-4)); box-shadow:0 0 12px rgba(255,77,219,.6);}
+.side-dots a::before{content:attr(data-label); position:absolute; left:26px; top:50%; transform:translateY(-50%) translateX(-6px); white-space:nowrap; font-size:.75rem; color:var(--text-hi); background:var(--ink-1); border:1px solid var(--line-hi); padding:4px 10px; border-radius:8px; opacity:0; pointer-events:none; transition:opacity .2s,transform .2s;}
+.side-dots a:hover::before{opacity:1; transform:translateY(-50%) translateX(0);}
 </style>
 </head>
 <body>
@@ -1827,14 +1880,27 @@ body.chat-page-lock{overflow:hidden;}
 
 <main>
   <!-- ============ HERO ============ -->
-  <section class="hero">
+  <section class="hero" id="home">
     <div class="hero-bg-grid" aria-hidden="true"></div>
     <div class="hero-spot hero-spot-1" aria-hidden="true"></div>
     <div class="hero-spot hero-spot-2" aria-hidden="true"></div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hv-orb"><span class="hv-ring"></span><span class="hv-ring r2"></span><img id="heroLogo" alt=""></div>
+      <div class="hv-card hv-a" style="--r:5deg">
+        <div class="hv-row"><b>تصميم هوية</b><span class="hv-ok">✓ تم التسليم</span></div>
+        <p>هوية بصرية كاملة لبراند جديد</p>
+        <div class="hv-bar"><i></i></div>
+      </div>
+      <div class="hv-card hv-b" style="--r:-6deg">
+        <div class="hv-row"><b>+15</b><span>مشروع منجز</span></div>
+        <div class="hv-bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:42%"></i><i style="height:78%"></i><i style="height:100%"></i></div>
+      </div>
+      <div class="hv-chip" style="--r:-3deg"><small>مشاهدات أعمالنا</small><b>+200K</b></div>
+    </div>
 
     <div class="wrap">
       <span class="eyebrow reveal-up d1"><span class="dot"></span> Creatix Studio Team</span>
-      <h1 class="hero-title">فريق بيحوّل الفكرة لهوية بصرية متكاملة</h1>
+      <h1 class="hero-title">فريق بيحوّل الفكرة ل<span class="hl">هوية بصرية</span> متكاملة</h1>
       <p class="hero-sub reveal-up d3">إحنا فريق Creatix Studio — مصممين، مطورين، ومونتيرين شغالين سوا عشان كل براند يطلع بصوت بصري مميز. شغلنا مش تصاميم منفصلة، ده تجربة متكاملة من أول الفكرة لحد التنفيذ.</p>
       <div class="hero-actions reveal-up d4">
         <a href="#portfolio" class="btn btn-primary">شاهدوا أعمالنا</a>
@@ -2418,6 +2484,29 @@ body.chat-page-lock{overflow:hidden;}
       </div>
     </div>
   </section>
+
+<nav class="side-dots" aria-label="التنقل بين الأقسام">
+  <a href="#home" data-label="الرئيسية" class="active"></a>
+  <a href="#about" data-label="من نحن"></a>
+  <a href="#services" data-label="خدماتنا"></a>
+  <a href="#portfolio" data-label="أعمالنا"></a>
+  <a href="#testimonials" data-label="آراء العملاء"></a>
+  <a href="#contact" data-label="تواصل معنا"></a>
+</nav>
+<script>
+(function(){
+  var logo=document.getElementById('heroLogo'), hl=document.querySelector('header img');
+  if(logo&&hl) logo.src=hl.src;
+  var links=[].slice.call(document.querySelectorAll('.side-dots a'));
+  if(!('IntersectionObserver' in window)) return;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(!e.isIntersecting) return;
+      links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+e.target.id); });
+    });
+  },{rootMargin:'-45% 0px -50% 0px'});
+  links.forEach(function(a){ var s=document.querySelector(a.getAttribute('href')); if(s) io.observe(s); });
+})();
+</script>
 </main>
 
 <!-- ============ FOOTER ============ -->
