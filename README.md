@@ -31,7 +31,7 @@ If this project inspired you, saved you time, or just looks good — **please gi
 
 ## ✨ Overview
 
-**Creatix Studio** is the official website of a creative agency based in Egypt offering **graphic design, web development, and video editing**. It's built as a single, dependency-free HTML file that is fast to load, easy to host, and carefully crafted for Arabic (RTL) audiences — without sacrificing the polish you'd expect from a premium agency site.
+**Creatix Studio** is the official website of a creative agency based in Egypt offering **graphic design, web development, and video editing**. It's built as a single, dependency-free HTML file that is fast to load, easy to host, and carefully crafted for Arabic (RTL) audiences — without sacrificing the polish you would expect from a premium agency site.
 
 No build step. No framework lock-in. Just open `index.html` and ship.
 
